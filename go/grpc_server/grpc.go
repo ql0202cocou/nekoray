@@ -18,7 +18,7 @@ import (
 
 	"github.com/matsuridayo/libneko/neko_common"
 
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
 	"google.golang.org/grpc"
 )
 

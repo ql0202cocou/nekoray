@@ -2,12 +2,13 @@
     "log": {
         "level": "info"
     },
-    "dns": {
-        "fakeip": {
+    "experimental": {
+        "cache_file": {
             "enabled": true,
-            "inet4_range": "198.18.0.0/15",
-            "inet6_range": "fc00::/18"
-        },
+            "store_fakeip": true
+        }
+    },
+    "dns": {
         "servers": [
             {
                 "tag": "dns-remote",
@@ -62,15 +63,19 @@
             "type": "tun",
             "tag": "tun-in",
             "interface_name": "%TUN_NAME%",
-            "inet4_address": "172.19.0.1/28",
-            //%IPV6_ADDRESS%
+            "address": [
+                "172.19.0.1/28"
+                //%IPV6_ADDRESS%
+            ],
             "mtu": %MTU%,
             "auto_route": true,
             "strict_route": %STRICT_ROUTE%,
             "stack": "%STACK%",
-            "endpoint_independent_nat": true,
             "sniff": false
         }
+    ],
+    "endpoints": [
+        //%ENDPOINTS%
     ],
     "outbounds": [
         {

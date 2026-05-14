@@ -63,6 +63,8 @@ func DoFullTest(ctx context.Context, in *gen.TestReq, instance interface{}) (out
 			pc, err := neko_common.DialContext(ctx, instance, "udp", "8.8.8.8:53")
 			if err == nil {
 				defer pc.Close()
+				// C5 fix: Set read deadline to ensure goroutine exits on timeout
+				_ = pc.SetReadDeadline(time.Now().Add(time.Second * 3))
 				dnsPacket, _ := hex.DecodeString("0000010000010000000000000377777706676f6f676c6503636f6d0000010001")
 				_, err = pc.Write(dnsPacket)
 				if err == nil {
@@ -122,13 +124,15 @@ func DoFullTest(ctx context.Context, in *gen.TestReq, instance interface{}) (out
 
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(in.FullSpeedTimeout))
 		result := make(chan string)
-		var bodyClose io.Closer
+		// C5 fix: Use channel to safely pass body closer between goroutines
+		bodyChan := make(chan io.Closer, 1)
 
 		go func() {
 			req, _ := http.NewRequestWithContext(ctx, "GET", in.FullSpeedUrl, nil)
 			resp, err := httpClient.Do(req)
 			if err == nil && resp != nil && resp.Body != nil {
-				bodyClose = resp.Body
+				// Send body closer to main goroutine before blocking on io.Copy
+				bodyChan <- resp.Body
 				defer resp.Body.Close()
 
 				timeStart := time.Now()
@@ -139,6 +143,7 @@ func DoFullTest(ctx context.Context, in *gen.TestReq, instance interface{}) (out
 				resultSpeed := (float64(n) / duration) / MiB
 				result <- fmt.Sprintf("%.2fMiB/s", resultSpeed)
 			} else {
+				close(bodyChan)
 				result <- "Error"
 			}
 			close(result)
@@ -152,8 +157,9 @@ func DoFullTest(ctx context.Context, in *gen.TestReq, instance interface{}) (out
 		}
 
 		cancel()
-		if bodyClose != nil {
-			bodyClose.Close()
+		// Close body to interrupt io.Copy if it's still running
+		if bc, ok := <-bodyChan; ok {
+			bc.Close()
 		}
 	}
 

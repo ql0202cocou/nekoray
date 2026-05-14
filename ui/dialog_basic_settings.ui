@@ -85,6 +85,26 @@
            </layout>
           </widget>
          </item>
+         <item>
+          <widget class="QGroupBox" name="groupbox_custom_endpoint">
+           <layout class="QHBoxLayout" name="horizontalLayout_15">
+            <item>
+             <widget class="QLabel" name="label_16">
+              <property name="text">
+               <string>Custom Endpoint</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="custom_endpoint_edit">
+              <property name="text">
+               <string>Edit</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
         </layout>
        </item>
        <item>

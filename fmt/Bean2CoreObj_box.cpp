@@ -47,7 +47,7 @@ namespace NekoGui_fmt {
         // 对应字段 tls
         if (security == "tls") {
             QJsonObject tls{{"enabled", true}};
-            if (allow_insecure || NekoGui::dataStore->skip_cert) tls["insecure"] = true;
+            if (allow_insecure) tls["insecure"] = true;
             if (!sni.trimmed().isEmpty()) tls["server_name"] = sni;
             if (!certificate.trimmed().isEmpty()) {
                 tls["certificate"] = certificate.trimmed();
@@ -232,6 +232,105 @@ namespace NekoGui_fmt {
             result.outbound = QString2QJsonObject(config_simple);
         }
 
+        return result;
+    }
+
+    CoreObjOutboundBuildResult AnyTLSBean::BuildCoreObjSingBox() {
+        CoreObjOutboundBuildResult result;
+
+        QJsonObject outbound{
+            {"type", "anytls"},
+            {"server", serverAddress},
+            {"server_port", serverPort},
+            {"password", password},
+        };
+
+        stream->BuildStreamSettingsSingBox(&outbound);
+        result.outbound = outbound;
+        return result;
+    }
+
+    CoreObjOutboundBuildResult SSHBean::BuildCoreObjSingBox() {
+        CoreObjOutboundBuildResult result;
+
+        QJsonObject outbound{
+            {"type", "ssh"},
+            {"server", serverAddress},
+            {"server_port", serverPort},
+        };
+
+        if (!user.isEmpty()) outbound["user"] = user;
+        if (!password.isEmpty()) outbound["password"] = password;
+        if (!private_key.isEmpty()) outbound["private_key"] = QList2QJsonArray(private_key);
+        if (!private_key_path.isEmpty()) outbound["private_key_path"] = private_key_path;
+        if (!private_key_passphrase.isEmpty()) outbound["private_key_passphrase"] = private_key_passphrase;
+        if (!host_key.isEmpty()) outbound["host_key"] = QList2QJsonArray(host_key);
+        if (!host_key_algorithms.isEmpty()) outbound["host_key_algorithms"] = QList2QJsonArray(host_key_algorithms);
+        if (!client_version.isEmpty()) outbound["client_version"] = client_version;
+
+        result.outbound = outbound;
+        return result;
+    }
+
+    CoreObjOutboundBuildResult TorBean::BuildCoreObjSingBox() {
+        CoreObjOutboundBuildResult result;
+
+        QJsonObject outbound{
+            {"type", "tor"},
+        };
+
+        // C1 fix: Validate executable_path — reject control characters and null bytes
+        if (!executable_path.isEmpty()) {
+            for (const auto &ch : executable_path) {
+                if (ch.unicode() < 0x20 || ch.unicode() == 0x7F) {
+                    result.error = "Tor executable_path contains invalid control characters";
+                    return result;
+                }
+            }
+            outbound["executable_path"] = executable_path;
+        }
+        if (!data_directory.isEmpty()) {
+            for (const auto &ch : data_directory) {
+                if (ch.unicode() < 0x20 || ch.unicode() == 0x7F) {
+                    result.error = "Tor data_directory contains invalid control characters";
+                    return result;
+                }
+            }
+            if (data_directory.contains("..")) {
+                result.error = "Tor data_directory must not contain '..'";
+                return result;
+            }
+            outbound["data_directory"] = data_directory;
+        }
+        // C1 fix: Filter extra_args — reject args containing shell metacharacters
+        if (!extra_args.isEmpty()) {
+            const QString dangerous = ";|&`$(){}[]<>!\\\"";
+            QStringList safeArgs;
+            for (const auto &arg : extra_args) {
+                bool hasDangerous = false;
+                for (const auto &ch : arg) {
+                    if (dangerous.contains(ch)) {
+                        hasDangerous = true;
+                        break;
+                    }
+                }
+                if (!hasDangerous) {
+                    safeArgs.append(arg);
+                }
+            }
+            if (!safeArgs.isEmpty()) {
+                outbound["extra_args"] = QList2QJsonArray(safeArgs);
+            }
+        }
+
+        if (!torrc_json.isEmpty()) {
+            auto torrcObj = QString2QJsonObject(torrc_json);
+            if (!torrcObj.isEmpty()) {
+                outbound["torrc"] = torrcObj;
+            }
+        }
+
+        result.outbound = outbound;
         return result;
     }
 } // namespace NekoGui_fmt

@@ -26,6 +26,7 @@ private:
     struct {
         QJsonObject extraCore;
         QString custom_inbound;
+        QString custom_endpoint;
         bool needRestart = false;
     } CACHE;
 

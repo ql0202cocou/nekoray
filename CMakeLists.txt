@@ -203,6 +203,24 @@ set(PROJECT_SOURCES
         ui/edit/edit_custom.cpp
         ui/edit/edit_custom.ui
 
+        ui/edit/edit_anytls.h
+        ui/edit/edit_anytls.cpp
+        ui/edit/edit_anytls.ui
+
+        ui/edit/edit_ssh.h
+        ui/edit/edit_ssh.cpp
+        ui/edit/edit_ssh.ui
+
+        ui/edit/edit_tor.h
+        ui/edit/edit_tor.cpp
+        ui/edit/edit_tor.ui
+
+        ui/edit/edit_tailscale.h
+        ui/edit/edit_tailscale.cpp
+        ui/edit/edit_tailscale.ui
+
+        fmt/TailscaleBean.cpp
+
         ui/dialog_basic_settings.cpp
         ui/dialog_basic_settings.h
         ui/dialog_basic_settings.ui

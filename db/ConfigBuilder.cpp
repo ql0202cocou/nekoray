@@ -6,6 +6,7 @@
 #include <QApplication>
 #include <QFile>
 #include <QFileInfo>
+#include <QUuid>
 
 #define BOX_UNDERLYING_DNS dataStore->core_box_underlying_dns.isEmpty() ? "local" : dataStore->core_box_underlying_dns
 
@@ -283,6 +284,22 @@ namespace NekoGui {
                 }
             }
 
+            // Endpoint (Tailscale)
+
+            auto tailscaleBean = dynamic_cast<NekoGui_fmt::TailscaleBean *>(ent->bean.get());
+            if (tailscaleBean != nullptr) {
+                auto endpoint = tailscaleBean->BuildEndpointConfig();
+                endpoint["tag"] = tagOut;
+                status->endpoints += endpoint;
+                ent->traffic_data->id = ent->id;
+                ent->traffic_data->tag = tagOut.toStdString();
+                status->result->outboundStats += ent->traffic_data;
+                pastTag = tagOut;
+                pastExternalStat = 0;
+                index++;
+                continue;
+            }
+
             // Outbound
 
             QJsonObject outbound;
@@ -422,12 +439,13 @@ namespace NekoGui {
             inboundObj["type"] = "tun";
             inboundObj["interface_name"] = genTunName();
             inboundObj["auto_route"] = true;
-            inboundObj["endpoint_independent_nat"] = true;
             inboundObj["mtu"] = dataStore->vpn_mtu;
             inboundObj["stack"] = Preset::SingBox::VpnImplementation.value(dataStore->vpn_implementation);
             inboundObj["strict_route"] = dataStore->vpn_strict_route;
-            inboundObj["inet4_address"] = "172.19.0.1/28";
-            if (dataStore->vpn_ipv6) inboundObj["inet6_address"] = "fdfe:dcba:9876::1/126";
+            QJsonArray tunAddresses;
+            tunAddresses.append("172.19.0.1/28");
+            if (dataStore->vpn_ipv6) tunAddresses.append("fdfe:dcba:9876::1/126");
+            inboundObj["address"] = tunAddresses;
             if (dataStore->routing->sniffing_mode != SniffingMode::DISABLE) {
                 inboundObj["sniff"] = true;
                 inboundObj["sniff_override_destination"] = dataStore->routing->sniffing_mode == SniffingMode::FOR_DESTINATION;
@@ -463,8 +481,12 @@ namespace NekoGui {
         // custom inbound
         if (!status->forTest) QJSONARRAY_ADD(status->inbounds, QString2QJsonObject(dataStore->custom_inbound)["inbounds"].toArray())
 
+        // custom endpoint
+        if (!status->forTest) QJSONARRAY_ADD(status->endpoints, QString2QJsonObject(dataStore->custom_endpoint)["endpoints"].toArray())
+
         status->result->coreConfig.insert("inbounds", status->inbounds);
         status->result->coreConfig.insert("outbounds", status->outbounds);
+        if (!status->endpoints.isEmpty()) status->result->coreConfig.insert("endpoints", status->endpoints);
 
         // user rule
         if (!status->forTest) {
@@ -570,11 +592,6 @@ namespace NekoGui {
             dnsServers += QJsonObject{
                 {"tag", "dns-fake"},
                 {"address", "fakeip"},
-            };
-            dns["fakeip"] = QJsonObject{
-                {"enabled", true},
-                {"inet4_range", "198.18.0.0/15"},
-                {"inet6_range", "fc00::/18"},
             };
         }
 
@@ -706,7 +723,7 @@ namespace NekoGui {
         QJSONARRAY_ADD(routingRules, status->routingRules)
         auto routeObj = QJsonObject{
             {"rules", routingRules},
-            {"auto_detect_interface", dataStore->spmode_vpn}, // TODO force enable?
+            {"auto_detect_interface", dataStore->spmode_vpn},
             {
                 "geoip",
                 QJsonObject{
@@ -730,10 +747,24 @@ namespace NekoGui {
         // experimental
         QJsonObject experimentalObj;
 
+        // cache_file for fakeip
+        if (dataStore->fake_dns && dataStore->vpn_internal_tun && dataStore->spmode_vpn && !status->forTest) {
+            QJsonObject cache_file = {
+                {"enabled", true},
+                {"store_fakeip", true},
+            };
+            experimentalObj["cache_file"] = cache_file;
+        }
+
         if (!status->forTest && dataStore->core_box_clash_api > 0) {
+            // H1 fix: Generate random secret if none configured
+            auto secret = dataStore->core_box_clash_api_secret;
+            if (secret.isEmpty()) {
+                secret = QUuid::createUuid().toString(QUuid::WithoutBraces).left(16);
+            }
             QJsonObject clash_api = {
                 {"external_controller", "127.0.0.1:" + Int2String(dataStore->core_box_clash_api)},
-                {"secret", dataStore->core_box_clash_api_secret},
+                {"secret", secret},
                 {"external_ui", "dashboard"},
             };
             experimentalObj["clash_api"] = clash_api;
@@ -765,20 +796,25 @@ namespace NekoGui {
 
         // TODO bypass ext core process path?
 
-        // auth
+        // auth (C2 fix: use proper JSON serialization to prevent injection)
         QString socks_user_pass;
         if (dataStore->inbound_auth->NeedAuth()) {
-            socks_user_pass = R"( "username": "%1", "password": "%2", )";
-            socks_user_pass = socks_user_pass.arg(dataStore->inbound_auth->username, dataStore->inbound_auth->password);
+            QJsonObject authObj;
+            authObj["username"] = dataStore->inbound_auth->username;
+            authObj["password"] = dataStore->inbound_auth->password;
+            auto authStr = QJsonObject2QString(authObj, false);
+            // Strip outer braces to get just the key-value pairs
+            socks_user_pass = authStr.mid(1, authStr.length() - 2) + ",";
         }
         // gen config
         auto configFn = ":/neko/vpn/sing-box-vpn.json";
         if (QFile::exists("vpn/sing-box-vpn.json")) configFn = "vpn/sing-box-vpn.json";
         auto config = ReadFileText(configFn)
-                          .replace("//%IPV6_ADDRESS%", dataStore->vpn_ipv6 ? R"("inet6_address": "fdfe:dcba:9876::1/126",)" : "")
+                          .replace("//%IPV6_ADDRESS%", dataStore->vpn_ipv6 ? R"(,"fdfe:dcba:9876::1/126")" : "")
                           .replace("//%SOCKS_USER_PASS%", socks_user_pass)
                           .replace("//%PROCESS_NAME_RULE%", process_name_rule)
                           .replace("//%CIDR_RULE%", cidr_rule)
+                          .replace("//%ENDPOINTS%", "")
                           .replace("%MTU%", Int2String(dataStore->vpn_mtu))
                           .replace("%STACK%", Preset::SingBox::VpnImplementation.value(dataStore->vpn_implementation))
                           .replace("%TUN_NAME%", genTunName())
@@ -787,10 +823,12 @@ namespace NekoGui {
                           .replace("%DNS_ADDRESS%", BOX_UNDERLYING_DNS)
                           .replace("%FAKE_DNS_INBOUND%", dataStore->fake_dns ? "tun-in" : "empty")
                           .replace("%PORT%", Int2String(dataStore->inbound_socks_port));
-        // write config
+        // write config (M10 fix: check file open result)
         QFile file;
         file.setFileName(QFileInfo(configFn).fileName());
-        file.open(QIODevice::ReadWrite | QIODevice::Truncate);
+        if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+            return {};
+        }
         file.write(config.toUtf8());
         file.close();
         return QFileInfo(file).absoluteFilePath();
@@ -800,16 +838,22 @@ namespace NekoGui {
 #ifdef Q_OS_WIN
         return {};
 #endif
+        // C3 fix: Shell-quote paths to prevent command injection
+        auto quoteShell = [](const QString &s) -> QString {
+            return "'" + s.replace("'", "'\\''") + "'";
+        };
         // gen script
         auto scriptFn = ":/neko/vpn/vpn-run-root.sh";
         if (QFile::exists("vpn/vpn-run-root.sh")) scriptFn = "vpn/vpn-run-root.sh";
         auto script = ReadFileText(scriptFn)
-                          .replace("./nekobox_core", QApplication::applicationDirPath() + "/nekobox_core")
-                          .replace("$CONFIG_PATH", configPath);
-        // write script
+                          .replace("./nekobox_core", quoteShell(QApplication::applicationDirPath() + "/nekobox_core"))
+                          .replace("$CONFIG_PATH", quoteShell(configPath));
+        // write script (M10 fix: check file open result)
         QFile file2;
         file2.setFileName(QFileInfo(scriptFn).fileName());
-        file2.open(QIODevice::ReadWrite | QIODevice::Truncate);
+        if (!file2.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+            return {};
+        }
         file2.write(script.toUtf8());
         file2.close();
         return QFileInfo(file2).absoluteFilePath();

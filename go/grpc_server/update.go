@@ -25,7 +25,11 @@ func (s *BaseServer) Update(ctx context.Context, in *gen.UpdateReq) (*gen.Update
 		ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 		defer cancel()
 
-		req, _ := http.NewRequestWithContext(ctx, "GET", "https://api.github.com/repos/MatsuriDayo/nekoray/releases", nil)
+		req, err := http.NewRequestWithContext(ctx, "GET", "https://api.github.com/repos/MatsuriDayo/nekoray/releases", nil)
+		if err != nil {
+			ret.Error = err.Error()
+			return ret, nil
+		}
 		resp, err := client.Do(req)
 		if err != nil {
 			ret.Error = err.Error()
@@ -89,7 +93,11 @@ func (s *BaseServer) Update(ctx context.Context, in *gen.UpdateReq) (*gen.Update
 			return ret, nil
 		}
 
-		req, _ := http.NewRequestWithContext(ctx, "GET", update_download_url, nil)
+		req, err := http.NewRequestWithContext(ctx, "GET", update_download_url, nil)
+		if err != nil {
+			ret.Error = err.Error()
+			return ret, nil
+		}
 		resp, err := client.Do(req)
 		if err != nil {
 			ret.Error = err.Error()
@@ -104,7 +112,8 @@ func (s *BaseServer) Update(ctx context.Context, in *gen.UpdateReq) (*gen.Update
 		}
 		defer f.Close()
 
-		_, err = io.Copy(f, resp.Body)
+		// M12 fix: Limit download size to 200MB to prevent disk fill
+		_, err = io.Copy(f, io.LimitReader(resp.Body, 200*1024*1024))
 		if err != nil {
 			ret.Error = err.Error()
 			return ret, nil

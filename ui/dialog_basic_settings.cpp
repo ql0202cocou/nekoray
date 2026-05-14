@@ -67,6 +67,7 @@ DialogBasicSettings::DialogBasicSettings(QWidget *parent)
     D_LOAD_STRING(inbound_address)
     D_LOAD_COMBO_STRING(log_level)
     CACHE.custom_inbound = NekoGui::dataStore->custom_inbound;
+    CACHE.custom_endpoint = NekoGui::dataStore->custom_endpoint;
     D_LOAD_INT(inbound_socks_port)
     D_LOAD_INT(test_concurrent)
     D_LOAD_INT(test_download_timeout)
@@ -76,6 +77,10 @@ DialogBasicSettings::DialogBasicSettings(QWidget *parent)
 
     connect(ui->custom_inbound_edit, &QPushButton::clicked, this, [=] {
         C_EDIT_JSON_ALLOW_EMPTY(custom_inbound)
+    });
+
+    connect(ui->custom_endpoint_edit, &QPushButton::clicked, this, [=] {
+        C_EDIT_JSON_ALLOW_EMPTY(custom_endpoint)
     });
 
 #ifdef Q_OS_WIN
@@ -218,6 +223,7 @@ void DialogBasicSettings::accept() {
     D_SAVE_STRING(inbound_address)
     D_SAVE_COMBO_STRING(log_level)
     NekoGui::dataStore->custom_inbound = CACHE.custom_inbound;
+    NekoGui::dataStore->custom_endpoint = CACHE.custom_endpoint;
     D_SAVE_INT(inbound_socks_port)
     D_SAVE_INT(test_concurrent)
     D_SAVE_INT(test_download_timeout)

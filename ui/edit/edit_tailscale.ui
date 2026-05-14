@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>EditTailscale</class>
+ <widget class="QWidget" name="EditTailscale">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>500</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string notr="true"/>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="0" column="0">
+    <widget class="QLabel" name="state_directory_l">
+     <property name="text">
+      <string>State Directory</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="MyLineEdit" name="state_directory"/>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="auth_key_l">
+     <property name="text">
+      <string>Auth Key</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="MyLineEdit" name="auth_key"/>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="control_url_l">
+     <property name="text">
+      <string>Control URL</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="MyLineEdit" name="control_url"/>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="hostname_l">
+     <property name="text">
+      <string>Hostname</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="MyLineEdit" name="hostname"/>
+   </item>
+   <item row="4" column="0">
+    <widget class="QLabel" name="exit_node_l">
+     <property name="text">
+      <string>Exit Node</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="1">
+    <widget class="MyLineEdit" name="exit_node"/>
+   </item>
+   <item row="5" column="0" colspan="2">
+    <widget class="QCheckBox" name="ephemeral">
+     <property name="text">
+      <string>Ephemeral</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0" colspan="2">
+    <widget class="QCheckBox" name="accept_routes">
+     <property name="text">
+      <string>Accept Routes</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0" colspan="2">
+    <widget class="QCheckBox" name="exit_node_allow_lan_access">
+     <property name="text">
+      <string>Exit Node Allow LAN Access</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="0" colspan="2">
+    <widget class="QCheckBox" name="advertise_exit_node">
+     <property name="text">
+      <string>Advertise Exit Node</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="0">
+    <widget class="QLabel" name="advertise_routes_l">
+     <property name="text">
+      <string>Advertise Routes</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="1">
+    <widget class="QTextEdit" name="advertise_routes">
+     <property name="placeholderText">
+      <string>One route per line (e.g., 192.168.1.0/24)</string>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="0">
+    <widget class="QLabel" name="advertise_tags_l">
+     <property name="text">
+      <string>Advertise Tags</string>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="1">
+    <widget class="QTextEdit" name="advertise_tags">
+     <property name="placeholderText">
+      <string>One tag per line</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>MyLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>ui/widget/MyLineEdit.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

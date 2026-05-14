@@ -9,6 +9,10 @@
 #include "ui/edit/edit_naive.h"
 #include "ui/edit/edit_quic.h"
 #include "ui/edit/edit_custom.h"
+#include "ui/edit/edit_anytls.h"
+#include "ui/edit/edit_ssh.h"
+#include "ui/edit/edit_tor.h"
+#include "ui/edit/edit_tailscale.h"
 
 #include "fmt/includes.h"
 #include "fmt/Preset.hpp"
@@ -116,6 +120,10 @@ DialogEditProfile::DialogEditProfile(const QString &_type, int profileOrGroupId,
         LOAD_TYPE("naive")
         LOAD_TYPE("hysteria2")
         LOAD_TYPE("tuic")
+        LOAD_TYPE("anytls")
+        LOAD_TYPE("ssh")
+        LOAD_TYPE("tor")
+        LOAD_TYPE("tailscale")
         ui->type->addItem(tr("Custom (%1 outbound)").arg(software_core_name), "internal");
         ui->type->addItem(tr("Custom (%1 config)").arg(software_core_name), "internal-full");
         ui->type->addItem(tr("Custom (Extra Core)"), "custom");
@@ -175,6 +183,22 @@ void DialogEditProfile::typeSelected(const QString &newType) {
         auto _innerWidget = new EditQUIC(this);
         innerWidget = _innerWidget;
         innerEditor = _innerWidget;
+    } else if (type == "anytls") {
+        auto _innerWidget = new EditAnyTLS(this);
+        innerWidget = _innerWidget;
+        innerEditor = _innerWidget;
+    } else if (type == "ssh") {
+        auto _innerWidget = new EditSSH(this);
+        innerWidget = _innerWidget;
+        innerEditor = _innerWidget;
+    } else if (type == "tor") {
+        auto _innerWidget = new EditTor(this);
+        innerWidget = _innerWidget;
+        innerEditor = _innerWidget;
+    } else if (type == "tailscale") {
+        auto _innerWidget = new EditTailscale(this);
+        innerWidget = _innerWidget;
+        innerEditor = _innerWidget;
     } else if (type == "custom" || type == "internal" || type == "internal-full") {
         auto _innerWidget = new EditCustom(this);
         innerWidget = _innerWidget;
@@ -197,7 +221,7 @@ void DialogEditProfile::typeSelected(const QString &newType) {
     }
 
     // hide some widget
-    auto showAddressPort = type != "chain" && customType != "internal" && customType != "internal-full";
+    auto showAddressPort = type != "chain" && type != "tor" && type != "tailscale" && customType != "internal" && customType != "internal-full";
     ui->address->setVisible(showAddressPort);
     ui->address_l->setVisible(showAddressPort);
     ui->port->setVisible(showAddressPort);
@@ -249,19 +273,22 @@ void DialogEditProfile::typeSelected(const QString &newType) {
     ui->custom_box->setVisible(show_custom_outbound);
     ui->custom_global_box->setVisible(show_custom_config);
 
-    // 左边 bean
-    auto old = ui->bean->layout()->itemAt(0)->widget();
-    ui->bean->layout()->removeWidget(old);
+    // 左边 bean (M8 fix: null check for itemAt(0))
+    auto layoutItem = ui->bean->layout()->itemAt(0);
+    if (layoutItem && layoutItem->widget()) {
+        auto old = layoutItem->widget();
+        ui->bean->layout()->removeWidget(old);
+        delete old;
+    }
     innerWidget->layout()->setContentsMargins(0, 0, 0, 0);
     ui->bean->layout()->addWidget(innerWidget);
     ui->bean->setTitle(ent->bean->DisplayType());
-    delete old;
 
-    // 左边 bean inner editor
-    innerEditor->get_edit_dialog = [&]() { return (QWidget *) this; };
-    innerEditor->get_edit_text_name = [&]() { return ui->name->text(); };
-    innerEditor->get_edit_text_serverAddress = [&]() { return ui->address->text(); };
-    innerEditor->get_edit_text_serverPort = [&]() { return ui->port->text(); };
+    // 左边 bean inner editor (M14 fix: use [this] instead of [&])
+    innerEditor->get_edit_dialog = [this]() { return (QWidget *) this; };
+    innerEditor->get_edit_text_name = [this]() { return ui->name->text(); };
+    innerEditor->get_edit_text_serverAddress = [this]() { return ui->address->text(); };
+    innerEditor->get_edit_text_serverPort = [this]() { return ui->port->text(); };
     innerEditor->editor_cache_updated = [=] { editor_cache_updated_impl(); };
     innerEditor->onStart(ent);
 
@@ -337,7 +364,8 @@ bool DialogEditProfile::onEnd() {
     // 左边
     ent->bean->name = ui->name->text();
     ent->bean->serverAddress = ui->address->text().remove(' ');
-    ent->bean->serverPort = ui->port->text().toInt();
+    // L7 fix: Clamp port to valid range 1-65535
+    ent->bean->serverPort = qBound(1, ui->port->text().toInt(), 65535);
 
     // 右边 stream
     auto stream = GetStreamSettings(ent->bean.get());

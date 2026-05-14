@@ -9,6 +9,9 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 
+#include <atomic>
+#include <climits>
+
 #ifdef Q_OS_WIN
 #include "sys/windows/guihelper.h"
 #else
@@ -137,7 +140,13 @@ namespace NekoGui_ConfigItem {
                     if (value.type() != QJsonValue::Double) {
                         continue;
                     }
-                    *(long long *) item->ptr = value.toDouble();
+                    // L3 fix: Clamp to long long range to avoid UB on overflow
+                    {
+                        double d = value.toDouble();
+                        if (d > static_cast<double>(LLONG_MAX)) d = static_cast<double>(LLONG_MAX);
+                        if (d < static_cast<double>(LLONG_MIN)) d = static_cast<double>(LLONG_MIN);
+                        *(long long *) item->ptr = static_cast<long long>(d);
+                    }
                     break;
                 case itemType::boolean:
                     if (value.type() != QJsonValue::Bool) {
@@ -189,11 +198,15 @@ namespace NekoGui_ConfigItem {
         auto changed = last_save_content != save_content;
         last_save_content = save_content;
 
+        // M5 fix: Atomic write — write to temp file then rename
         QFile file;
-        file.setFileName(fn);
-        file.open(QIODevice::ReadWrite | QIODevice::Truncate);
-        file.write(save_content);
-        file.close();
+        file.setFileName(fn + ".tmp");
+        if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+            file.write(save_content);
+            file.close();
+            QFile::remove(fn);
+            QFile::rename(fn + ".tmp", fn);
+        }
 
         return changed;
     }
@@ -227,8 +240,8 @@ namespace NekoGui {
     // datastore
 
     DataStore::DataStore() : JsonStore() {
-        _add(new configItem("extraCore", dynamic_cast<JsonStore *>(extraCore), itemType::jsonStore));
-        _add(new configItem("inbound_auth", dynamic_cast<JsonStore *>(inbound_auth), itemType::jsonStore));
+        _add(new configItem("extraCore", dynamic_cast<JsonStore *>(extraCore.get()), itemType::jsonStore));
+        _add(new configItem("inbound_auth", dynamic_cast<JsonStore *>(inbound_auth.get()), itemType::jsonStore));
 
         _add(new configItem("user_agent2", &user_agent, itemType::string));
         _add(new configItem("test_url", &test_latency_url, itemType::string));
@@ -246,6 +259,7 @@ namespace NekoGui {
         _add(new configItem("test_concurrent", &test_concurrent, itemType::integer));
         _add(new configItem("theme", &theme, itemType::string));
         _add(new configItem("custom_inbound", &custom_inbound, itemType::string));
+        _add(new configItem("custom_endpoint", &custom_endpoint, itemType::string));
         _add(new configItem("custom_route", &custom_route_global, itemType::string));
         _add(new configItem("sub_use_proxy", &sub_use_proxy, itemType::boolean));
         _add(new configItem("remember_id", &remember_id, itemType::integer));
@@ -439,7 +453,7 @@ namespace NekoGui {
         return fn;
     }
 
-    short isAdminCache = -1;
+    std::atomic<short> isAdminCache{-1};
 
     // IsAdmin 主要判断：有无权限启动 Tun
     bool IsAdmin() {

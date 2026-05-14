@@ -222,4 +222,37 @@ namespace NekoGui_fmt {
         return url.toString(QUrl::FullyEncoded);
     }
 
+    QString AnyTLSBean::ToShareLink() {
+        QUrl url;
+        url.setScheme("anytls");
+        url.setUserName(password);
+        url.setHost(serverAddress);
+        url.setPort(serverPort);
+        if (!name.isEmpty()) url.setFragment(name);
+        return url.toString(QUrl::FullyEncoded);
+    }
+
+    QString SSHBean::ToShareLink() {
+        QUrl url;
+        QUrlQuery query;
+        url.setScheme("ssh");
+        url.setUserName(user);
+        if (!password.isEmpty()) url.setPassword(password);
+        url.setHost(serverAddress);
+        url.setPort(serverPort);
+        if (!name.isEmpty()) url.setFragment(name);
+
+        if (!private_key_path.isEmpty()) query.addQueryItem("private_key_path", private_key_path);
+        if (!private_key_passphrase.isEmpty()) query.addQueryItem("private_key_passphrase", private_key_passphrase);
+        if (!client_version.isEmpty()) query.addQueryItem("client_version", client_version);
+        if (!query.isEmpty()) url.setQuery(query);
+
+        return url.toString(QUrl::FullyEncoded);
+    }
+
+    QString TorBean::ToShareLink() {
+        // Tor doesn't have a standard share link format
+        return {};
+    }
+
 } // namespace NekoGui_fmt

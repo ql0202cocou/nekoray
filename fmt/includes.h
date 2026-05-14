@@ -8,3 +8,7 @@
 #include "NaiveBean.hpp"
 #include "QUICBean.hpp"
 #include "CustomBean.hpp"
+#include "AnyTLSBean.hpp"
+#include "SSHBean.hpp"
+#include "TorBean.hpp"
+#include "TailscaleBean.hpp"

@@ -71,7 +71,7 @@ namespace NekoGui_fmt {
         if (!sni1.isEmpty()) stream->sni = sni1;
         if (!sni2.isEmpty()) stream->sni = sni2;
         stream->alpn = GetQueryValue(query, "alpn");
-        if (!query.queryItemValue("allowInsecure").isEmpty()) stream->allow_insecure = true;
+        { auto v = query.queryItemValue("allowInsecure"); if (v == "1" || v == "true") stream->allow_insecure = true; }
         stream->reality_pbk = GetQueryValue(query, "pbk", "");
         stream->reality_sid = GetQueryValue(query, "sid", "");
         stream->reality_spx = GetQueryValue(query, "spx", "");
@@ -201,7 +201,7 @@ namespace NekoGui_fmt {
             auto sni2 = GetQueryValue(query, "peer");
             if (!sni1.isEmpty()) stream->sni = sni1;
             if (!sni2.isEmpty()) stream->sni = sni2;
-            if (!query.queryItemValue("allowInsecure").isEmpty()) stream->allow_insecure = true;
+            { auto v = query.queryItemValue("allowInsecure"); if (v == "1" || v == "true") stream->allow_insecure = true; }
             stream->reality_pbk = GetQueryValue(query, "pbk", "");
             stream->reality_sid = GetQueryValue(query, "sid", "");
             stream->reality_spx = GetQueryValue(query, "spx", "");
@@ -262,8 +262,7 @@ namespace NekoGui_fmt {
 
             name = url.fragment(QUrl::FullyDecoded);
             serverAddress = url.host();
-            if (serverPort == -1) serverPort = 443;
-            serverPort = url.port();
+            serverPort = url.port(443);
 
             uuid = url.userName();
             password = url.password();
@@ -292,6 +291,44 @@ namespace NekoGui_fmt {
         }
 
         return true;
+    }
+
+    bool AnyTLSBean::TryParseLink(const QString &link) {
+        auto url = QUrl(link);
+        if (!url.isValid()) return false;
+
+        name = url.fragment(QUrl::FullyDecoded);
+        serverAddress = url.host();
+        serverPort = url.port();
+        password = url.userName();
+        if (serverPort == -1) serverPort = 443;
+
+        return !serverAddress.isEmpty();
+    }
+
+    bool SSHBean::TryParseLink(const QString &link) {
+        auto url = QUrl(link);
+        if (!url.isValid()) return false;
+        auto query = GetQuery(url);
+
+        name = url.fragment(QUrl::FullyDecoded);
+        serverAddress = url.host();
+        serverPort = url.port();
+        user = url.userName();
+        password = url.password();
+        if (serverPort == -1) serverPort = 22;
+
+        private_key_path = GetQueryValue(query, "private_key_path", "");
+        private_key_passphrase = GetQueryValue(query, "private_key_passphrase", "");
+        client_version = GetQueryValue(query, "client_version", "");
+
+        return !serverAddress.isEmpty();
+    }
+
+    bool TorBean::TryParseLink(const QString &link) {
+        // Tor doesn't have a standard share link format
+        Q_UNUSED(link);
+        return false;
     }
 
 } // namespace NekoGui_fmt

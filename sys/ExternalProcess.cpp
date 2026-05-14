@@ -49,7 +49,8 @@ namespace NekoGui_sys {
                     }
                 }
             });
-            MW_show_log_ext(tag, "External core starting: " + env.join(" ") + " " + program + " " + arguments.join(" "));
+            // M3 fix: Don't log full arguments (may contain credentials/tokens)
+            MW_show_log_ext(tag, "External core starting: " + program + " (" + QString::number(arguments.size()) + " args)");
         }
 
         QProcess::setEnvironment(env);
