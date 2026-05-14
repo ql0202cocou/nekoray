@@ -72,11 +72,13 @@ Thumbs.db
 # Custom
 /nekoray
 /build
+/libs/deps
 CMakeLists.txt.user*
 /cmake-build-*
 /build-*
 .vscode
 .idea
+.claude
 
 # Deploy
 /deployment
