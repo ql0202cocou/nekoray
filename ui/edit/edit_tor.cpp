@@ -8,6 +8,10 @@ EditTor::EditTor(QWidget *parent) : QWidget(parent), ui(new Ui::EditTor) {
     ui->setupUi(this);
 }
 
+QList<QPair<QPushButton *, QString>> EditTor::get_editor_cached() {
+    return {{ui->torrc_edit, CACHE.torrc_json}};
+}
+
 EditTor::~EditTor() {
     delete ui;
 }

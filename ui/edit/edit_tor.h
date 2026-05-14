@@ -21,7 +21,7 @@ public:
 
     bool onEnd() override;
 
-    QList<QPair<QPushButton *, QString>> get_editor_cached() override { return {{ui->torrc_edit, CACHE.torrc_json}}; };
+    QList<QPair<QPushButton *, QString>> get_editor_cached() override;
 
 private:
     Ui::EditTor *ui;

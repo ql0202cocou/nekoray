@@ -840,7 +840,8 @@ namespace NekoGui {
 #endif
         // C3 fix: Shell-quote paths to prevent command injection
         auto quoteShell = [](const QString &s) -> QString {
-            return "'" + s.replace("'", "'\\''") + "'";
+            auto copy = s;
+            return "'" + copy.replace("'", "'\\''") + "'";
         };
         // gen script
         auto scriptFn = ":/neko/vpn/vpn-run-root.sh";
