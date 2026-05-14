@@ -8,41 +8,17 @@ Support Windows / Linux out of the box now.
 
 目前支持 Windows / Linux 开箱即用
 
+> Fork 自 [MatsuriDayo/nekoray](https://github.com/MatsuriDayo/nekoray)，在此基础上新增多项协议支持。
+
 ## 下载 / Download
 
 ### GitHub Releases (Portable ZIP)
 
 便携格式，无安装器。转到 Releases 下载预编译的二进制文件，解压后即可使用。
 
-[![GitHub All Releases](https://img.shields.io/github/downloads/Matsuridayo/nekoray/total?label=downloads-total&logo=github&style=flat-square)](https://github.com/Matsuridayo/nekoray/releases)
+[![GitHub All Releases](https://img.shields.io/github/downloads/ql0202cocou/nekoray/total?label=downloads-total&logo=github&style=flat-square)](https://github.com/ql0202cocou/nekoray/releases)
 
-[下载 / Download](https://github.com/Matsuridayo/nekoray/releases)
-
-[安装包的说明，如果你不知道要下载哪一个](https://github.com/MatsuriDayo/nekoray/wiki/Installation-package-description)
-
-### Package
-
-#### AUR
-
-- [nekoray](https://aur.archlinux.org/packages/nekoray)
-- [nekoray-git](https://aur.archlinux.org/packages/nekoray-git)
-
-#### archlinuxcn
-
-- [nekoray](https://github.com/archlinuxcn/repo/tree/master/archlinuxcn/nekoray)
-- [nekoray-git](https://github.com/archlinuxcn/repo/tree/master/archlinuxcn/nekoray-git)
-
-#### Scoop Extras
-
-`scoop install nekoray`
-
-## 更改记录 & 发布频道 / Changelog & Telegram Channel
-
-https://t.me/Matsuridayo
-
-## 项目主页 & 文档 / Homepage & Documents
-
-https://matsuridayo.github.io
+[下载 / Download](https://github.com/ql0202cocou/nekoray/releases)
 
 ## 代理 / Proxy
 
@@ -53,8 +29,12 @@ https://matsuridayo.github.io
 - VLESS
 - Trojan
 - TUIC ( sing-box )
-- NaïveProxy ( Custom Core )
+- NaiveProxy ( Custom Core )
 - Hysteria2 ( Custom Core or sing-box )
+- AnyTLS ( sing-box )
+- SSH ( sing-box )
+- Tor ( sing-box )
+- Tailscale ( sing-box endpoint )
 - Custom Outbound
 - Custom Config
 - Custom Core
@@ -64,47 +44,18 @@ https://matsuridayo.github.io
 - Raw: some widely used formats (like Shadowsocks, Clash and v2rayN)
 - 原始格式: 一些广泛使用的格式 (如 Shadowsocks、Clash 和 v2rayN)
 
-## 运行参数
-
-[运行参数](docs/RunFlags.md)
-
 ## Windows 运行
 
 若提示 DLL 缺失，无法运行，请下载 安装 [微软 C++ 运行库](https://aka.ms/vs/17/release/vc_redist.x64.exe)
 
-## Linux 运行
-
-[Linux 运行教程](docs/Run_Linux.md)
-
 ## 编译教程 / Compile Tutorial
 
-请看 [技术文档 / Technical documentation](https://github.com/MatsuriDayo/nekoray/tree/main/docs)
-
-## 捐助 / Donate
-
-如果这个项目对您有帮助，可以通过捐赠的方式帮助我们维持这个项目。
-
-捐赠满等额 50 USD 可以在「[捐赠榜](https://mtrdnt.pages.dev/donation_list)」显示头像，如果您未被添加到这里，欢迎联系我们补充。
-
-Donations of 50 USD or more can display your avatar on the [Donation List](https://mtrdnt.pages.dev/donation_list). If you are not added here, please contact us to add it.
-
-USDT TRC20
-
-`TRhnA7SXE5Sap5gSG3ijxRmdYFiD4KRhPs`
-
-XMR
-
-`49bwESYQjoRL3xmvTcjZKHEKaiGywjLYVQJMUv79bXonGiyDCs8AzE3KiGW2ytTybBCpWJUvov8SjZZEGg66a4e59GXa6k5`
+请看 [技术文档 / Technical documentation](https://github.com/ql0202cocou/nekoray/tree/main/docs)
 
 ## Credits
 
 Core:
 
-- [v2fly/v2ray-core](https://github.com/v2fly/v2ray-core) ( < 3.10 )
-- [MatsuriDayo/Matsuri](https://github.com/MatsuriDayo/Matsuri) ( < 3.10 )
-- [MatsuriDayo/v2ray-core](https://github.com/MatsuriDayo/v2ray-core) ( < 3.10 )
-- [XTLS/Xray-core](https://github.com/XTLS/Xray-core) ( 3.10 <= Version <= 3.26 )
-- [MatsuriDayo/Xray-core](https://github.com/MatsuriDayo/Xray-core) ( 3.10 <= Version <= 3.26 )
 - [SagerNet/sing-box](https://github.com/SagerNet/sing-box)
 - [Matsuridayo/sing-box-extra](https://github.com/MatsuriDayo/sing-box-extra)
 
@@ -113,7 +64,6 @@ Gui:
 - [Qv2ray](https://github.com/Qv2ray/Qv2ray)
 - [Qt](https://www.qt.io/)
 - [protobuf](https://github.com/protocolbuffers/protobuf)
-- [yaml-cpp](https://github.com/jbeder/yaml-cpp)
-- [zxing-cpp](https://github.com/nu-book/zxing-cpp)
 - [QHotkey](https://github.com/Skycoder42/QHotkey)
-- [AppImageKit](https://github.com/AppImage/AppImageKit)
+
+上游项目 / Upstream: [MatsuriDayo/nekoray](https://github.com/MatsuriDayo/nekoray)
