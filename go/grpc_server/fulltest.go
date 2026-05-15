@@ -55,16 +55,18 @@ func DoFullTest(ctx context.Context, in *gen.TestReq, instance interface{}) (out
 	// UDP Latency
 	var udpLatency string
 	if in.FullUdpLatency {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
-		result := make(chan string)
+		udpCtx, cancel := context.WithTimeout(ctx, time.Second*3)
+		result := make(chan string, 1)
 
 		go func() {
 			var startTime = time.Now()
-			pc, err := neko_common.DialContext(ctx, instance, "udp", "8.8.8.8:53")
+			pc, err := neko_common.DialContext(udpCtx, instance, "udp", "8.8.8.8:53")
 			if err == nil {
 				defer pc.Close()
 				// C5 fix: Set read deadline to ensure goroutine exits on timeout
-				_ = pc.SetReadDeadline(time.Now().Add(time.Second * 3))
+				if err := pc.SetReadDeadline(time.Now().Add(time.Second * 3)); err != nil {
+					log.Println("UDP SetReadDeadline error:", err)
+				}
 				dnsPacket, _ := hex.DecodeString("0000010000010000000000000377777706676f6f676c6503636f6d0000010001")
 				_, err = pc.Write(dnsPacket)
 				if err == nil {
@@ -83,7 +85,7 @@ func DoFullTest(ctx context.Context, in *gen.TestReq, instance interface{}) (out
 		}()
 
 		select {
-		case <-ctx.Done():
+		case <-udpCtx.Done():
 			udpLatency = "Timeout"
 		case r := <-result:
 			udpLatency = r
@@ -107,8 +109,12 @@ func DoFullTest(ctx context.Context, in *gen.TestReq, instance interface{}) (out
 	if in.FullInOut {
 		resp, err := httpClient.Get("https://www.cloudflare.com/cdn-cgi/trace")
 		if err == nil {
-			b, _ := io.ReadAll(resp.Body)
-			out_ip = getBetweenStr(string(b), "ip=", "\n")
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				out_ip = "Error"
+			} else {
+				out_ip = getBetweenStr(string(b), "ip=", "\n")
+			}
 			resp.Body.Close()
 		} else {
 			out_ip = "Error"
@@ -122,13 +128,19 @@ func DoFullTest(ctx context.Context, in *gen.TestReq, instance interface{}) (out
 			in.FullSpeedTimeout = 30
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(in.FullSpeedTimeout))
-		result := make(chan string)
+		dlCtx, cancel := context.WithTimeout(ctx, time.Second*time.Duration(in.FullSpeedTimeout))
+		result := make(chan string, 1)
 		// C5 fix: Use channel to safely pass body closer between goroutines
 		bodyChan := make(chan io.Closer, 1)
 
 		go func() {
-			req, _ := http.NewRequestWithContext(ctx, "GET", in.FullSpeedUrl, nil)
+			req, err := http.NewRequestWithContext(dlCtx, "GET", in.FullSpeedUrl, nil)
+			if err != nil {
+				close(bodyChan)
+				result <- "Error"
+				close(result)
+				return
+			}
 			resp, err := httpClient.Do(req)
 			if err == nil && resp != nil && resp.Body != nil {
 				// Send body closer to main goroutine before blocking on io.Copy
@@ -150,7 +162,7 @@ func DoFullTest(ctx context.Context, in *gen.TestReq, instance interface{}) (out
 		}()
 
 		select {
-		case <-ctx.Done():
+		case <-dlCtx.Done():
 			speed = "Timeout"
 		case s := <-result:
 			speed = s

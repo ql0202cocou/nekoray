@@ -422,13 +422,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     connect(qApp, &QGuiApplication::commitDataRequest, this, &MainWindow::on_commitDataRequest);
 
-    auto t = new QTimer;
-    connect(t, &QTimer::timeout, this, [=]() { refresh_status(); });
-    t->start(2000);
+    auto t1 = new QTimer(this);
+    connect(t1, &QTimer::timeout, this, [=]() { refresh_status(); });
+    t1->start(2000);
 
-    t = new QTimer;
-    connect(t, &QTimer::timeout, this, [&] { NekoGui_sys::logCounter.fetchAndStoreRelaxed(0); });
-    t->start(1000);
+    auto t2 = new QTimer(this);
+    connect(t2, &QTimer::timeout, this, [&] { NekoGui_sys::logCounter.fetchAndStoreRelaxed(0); });
+    t2->start(1000);
 
     TM_auto_update_subsctiption = new QTimer;
     TM_auto_update_subsctiption_Reset_Minute = [&](int m) {

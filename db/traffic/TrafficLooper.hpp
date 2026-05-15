@@ -4,6 +4,8 @@
 #include <QList>
 #include <QMutex>
 
+#include <memory>
+
 #include "TrafficData.hpp"
 
 namespace NekoGui_traffic {
@@ -21,7 +23,7 @@ namespace NekoGui_traffic {
         void Loop();
 
     private:
-        TrafficData *bypass = new TrafficData("bypass");
+        std::unique_ptr<TrafficData> bypass = std::make_unique<TrafficData>("bypass");
 
         [[nodiscard]] static TrafficData *update_stats(TrafficData *item);
 

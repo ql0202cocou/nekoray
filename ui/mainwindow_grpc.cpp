@@ -280,6 +280,10 @@ void MainWindow::stop_core_daemon() {
 #ifndef NKR_NO_GRPC
     NekoGui_rpc::defaultClient->Exit();
 #endif
+    if (core_process) {
+        core_process->deleteLater();
+        core_process = nullptr;
+    }
 }
 
 void MainWindow::neko_start(int _id) {

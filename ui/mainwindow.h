@@ -15,6 +15,7 @@
 #include <QShortcut>
 #include <QSemaphore>
 #include <QMutex>
+#include <QPointer>
 
 #include "GroupSort.hpp"
 
@@ -141,7 +142,7 @@ private:
     QShortcut *shortcut_ctrl_f = new QShortcut(QKeySequence("Ctrl+F"), this);
     QShortcut *shortcut_esc = new QShortcut(QKeySequence("Esc"), this);
     //
-    NekoGui_sys::CoreProcess *core_process;
+    QPointer<NekoGui_sys::CoreProcess> core_process;
     qint64 vpn_pid = 0;
     //
     bool qvLogAutoScoll = true;

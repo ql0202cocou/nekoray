@@ -50,6 +50,6 @@ func extractHeader(ctx context.Context, header string) (string, error) {
 func purgeHeader(ctx context.Context, header string) context.Context {
 	md, _ := metadata.FromIncomingContext(ctx)
 	mdCopy := md.Copy()
-	mdCopy[header] = nil
+	delete(mdCopy, header)
 	return metadata.NewIncomingContext(ctx, mdCopy)
 }

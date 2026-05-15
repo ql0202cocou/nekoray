@@ -52,14 +52,16 @@ namespace NekoGui_fmt {
             return;
         }
 
-        QHostInfo::lookupHost(serverAddress, QApplication::instance(), [=](const QHostInfo &host) {
+        QPointer<AbstractBean> guard(this);
+        QHostInfo::lookupHost(serverAddress, QApplication::instance(), [guard](const QHostInfo &host) {
+            if (!guard) return;
             auto addr = host.addresses();
             if (!addr.isEmpty()) {
-                auto domain = serverAddress;
-                auto stream = GetStreamSettings(this);
+                auto domain = guard->serverAddress;
+                auto stream = GetStreamSettings(guard);
 
                 // replace serverAddress
-                serverAddress = addr.first().toString();
+                guard->serverAddress = addr.first().toString();
 
                 // replace ws tls
                 if (stream != nullptr) {
@@ -71,7 +73,7 @@ namespace NekoGui_fmt {
                     }
                 }
             }
-            onFinished();
+            guard->onFinished();
         });
     }
 } // namespace NekoGui_fmt

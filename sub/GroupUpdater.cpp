@@ -34,11 +34,13 @@ namespace NekoGui_sub {
         }
     }
 
-    void RawUpdater::update(const QString &str) {
+    void RawUpdater::update(const QString &str, int depth) {
         // Base64 encoded subscription
-        if (auto str2 = DecodeB64IfValid(str); !str2.isEmpty()) {
-            update(str2);
-            return;
+        if (depth < 3) {
+            if (auto str2 = DecodeB64IfValid(str); !str2.isEmpty()) {
+                update(str2, depth + 1);
+                return;
+            }
         }
 
         // Clash
@@ -80,42 +82,42 @@ namespace NekoGui_sub {
         }
 
         // HTTP
-        if (str.startsWith("http://") || str.startsWith("https://")) {
+        else if (str.startsWith("http://") || str.startsWith("https://")) {
             ent = NekoGui::ProfileManager::NewProxyEntity("http");
             auto ok = ent->SocksHTTPBean()->TryParseLink(str);
             if (!ok) return;
         }
 
         // ShadowSocks
-        if (str.startsWith("ss://")) {
+        else if (str.startsWith("ss://")) {
             ent = NekoGui::ProfileManager::NewProxyEntity("shadowsocks");
             auto ok = ent->ShadowSocksBean()->TryParseLink(str);
             if (!ok) return;
         }
 
         // VMess
-        if (str.startsWith("vmess://")) {
+        else if (str.startsWith("vmess://")) {
             ent = NekoGui::ProfileManager::NewProxyEntity("vmess");
             auto ok = ent->VMessBean()->TryParseLink(str);
             if (!ok) return;
         }
 
         // VLESS
-        if (str.startsWith("vless://")) {
+        else if (str.startsWith("vless://")) {
             ent = NekoGui::ProfileManager::NewProxyEntity("vless");
             auto ok = ent->TrojanVLESSBean()->TryParseLink(str);
             if (!ok) return;
         }
 
         // Trojan
-        if (str.startsWith("trojan://")) {
+        else if (str.startsWith("trojan://")) {
             ent = NekoGui::ProfileManager::NewProxyEntity("trojan");
             auto ok = ent->TrojanVLESSBean()->TryParseLink(str);
             if (!ok) return;
         }
 
         // Naive
-        if (str.startsWith("naive+")) {
+        else if (str.startsWith("naive+")) {
             needFix = false;
             ent = NekoGui::ProfileManager::NewProxyEntity("naive");
             auto ok = ent->NaiveBean()->TryParseLink(str);
@@ -123,7 +125,7 @@ namespace NekoGui_sub {
         }
 
         // Hysteria2
-        if (str.startsWith("hysteria2://") || str.startsWith("hy2://")) {
+        else if (str.startsWith("hysteria2://") || str.startsWith("hy2://")) {
             needFix = false;
             ent = NekoGui::ProfileManager::NewProxyEntity("hysteria2");
             auto ok = ent->QUICBean()->TryParseLink(str);
@@ -131,7 +133,7 @@ namespace NekoGui_sub {
         }
 
         // TUIC
-        if (str.startsWith("tuic://")) {
+        else if (str.startsWith("tuic://")) {
             needFix = false;
             ent = NekoGui::ProfileManager::NewProxyEntity("tuic");
             auto ok = ent->QUICBean()->TryParseLink(str);
@@ -342,7 +344,6 @@ namespace NekoGui_sub {
                     if (Node2Bool(proxy["tls"])) bean->stream->security = "tls";
                     if (Node2Bool(proxy["skip-cert-verify"])) bean->stream->allow_insecure = true;
                     bean->stream->utlsFingerprint = Node2QString(proxy["client-fingerprint"]);
-                    bean->stream->utlsFingerprint = Node2QString(proxy["client-fingerprint"]);
                     if (bean->stream->utlsFingerprint.isEmpty()) {
                         bean->stream->utlsFingerprint = NekoGui::dataStore->utlsFingerprint;
                     }
@@ -396,8 +397,8 @@ namespace NekoGui_sub {
                         for (auto header: headers) {
                             if (Node2QString(header.first).toLower() == "host") {
                                 bean->stream->host = Node2QString(header.second[0]);
+                                break;
                             }
-                            break;
                         }
                         auto paths = tcp_http["path"];
                         for (auto path: paths) {
@@ -473,11 +474,17 @@ namespace NekoGui_sub {
                 QObject::tr("As Subscription (create new group)"),
                 QObject::tr("As link"),
             };
-            bool ok;
-            auto a = QInputDialog::getItem(nullptr,
-                                           QObject::tr("url detected"),
-                                           QObject::tr("%1\nHow to update?").arg(content),
-                                           items, 0, false, &ok);
+            bool ok = false;
+            QString a;
+            QMetaObject::invokeMethod(
+                QCoreApplication::instance(),
+                [&] {
+                    a = QInputDialog::getItem(nullptr,
+                                               QObject::tr("url detected"),
+                                               QObject::tr("%1\nHow to update?").arg(content),
+                                               items, 0, false, &ok);
+                },
+                Qt::BlockingQueuedConnection);
             if (!ok) return;
             if (items.indexOf(a) <= 1) asURL = true;
             if (items.indexOf(a) == 1) createNewGroup = true;
@@ -586,7 +593,7 @@ namespace NekoGui_sub {
                 group->order = {};
                 for (const auto &ent: rawUpdater->updated_order) {
                     auto deleted_index = update_del.indexOf(ent);
-                    if (deleted_index > 0) {
+                    if (deleted_index != -1) {
                         if (deleted_index >= update_keep.count()) continue; // should not happen
                         auto ent2 = update_keep[deleted_index];
                         group->order.append(ent2->id);
