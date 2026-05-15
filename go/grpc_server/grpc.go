@@ -77,6 +77,9 @@ func RunCore(setupCore func(), server gen.LibcoreServiceServer) {
 		if s.Scan() {
 			token = strings.TrimSpace(s.Text())
 		}
+		if err := s.Err(); err != nil {
+			log.Fatalf("failed to read token: %v", err)
+		}
 	}
 	if token == "" {
 		fmt.Println("You must set a token")

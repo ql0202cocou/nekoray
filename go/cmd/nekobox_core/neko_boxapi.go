@@ -18,6 +18,9 @@ func nekoDialContext(ctx context.Context, b *box.Box, network, addr string) (net
 		return nil, fmt.Errorf("box instance is nil")
 	}
 	outbound := b.Outbound().Default()
+	if outbound == nil {
+		return nil, fmt.Errorf("no default outbound configured")
+	}
 	return outbound.DialContext(ctx, network, M.ParseSocksaddr(addr))
 }
 
@@ -27,6 +30,9 @@ func nekoCreateProxyHttpClient(b *box.Box) *http.Client {
 		return &http.Client{}
 	}
 	outbound := b.Outbound().Default()
+	if outbound == nil {
+		return &http.Client{}
+	}
 	return &http.Client{
 		Transport: &http.Transport{
 			ForceAttemptHTTP2:   true,

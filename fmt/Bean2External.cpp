@@ -13,10 +13,11 @@
     bool ok = f.open(QIODevice::WriteOnly | QIODevice::Truncate); \
     if (ok) {                                                     \
         f.write(data);                                            \
+        f.close();                                                \
     } else {                                                      \
         result.error = f.errorString();                           \
+        return result;                                            \
     }                                                             \
-    f.close();                                                    \
     auto TempFile = QFileInfo(f).absoluteFilePath();
 
 namespace NekoGui_fmt {

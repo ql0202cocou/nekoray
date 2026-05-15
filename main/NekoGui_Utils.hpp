@@ -105,6 +105,8 @@ QByteArray ReadFile(const QString &path);
 
 QString ReadFileText(const QString &path);
 
+void CleanupTempFiles();
+
 // Validators
 
 bool IsIpAddress(const QString &str);

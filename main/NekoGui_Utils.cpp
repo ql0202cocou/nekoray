@@ -10,6 +10,7 @@
 #include <QTcpServer>
 #include <QTimer>
 #include <QMessageBox>
+#include <QDir>
 #include <QFile>
 #include <QJsonObject>
 #include <QJsonArray>
@@ -132,15 +133,31 @@ QList<QString> QJsonArray2QListString(const QJsonArray &arr) {
 
 QByteArray ReadFile(const QString &path) {
     QFile file(path);
-    file.open(QFile::ReadOnly);
+    if (!file.open(QFile::ReadOnly)) {
+        MW_show_log("Failed to open file: " + path + " - " + file.errorString());
+        return {};
+    }
     return file.readAll();
 }
 
 QString ReadFileText(const QString &path) {
     QFile file(path);
-    file.open(QFile::ReadOnly | QFile::Text);
+    if (!file.open(QFile::ReadOnly | QFile::Text)) {
+        MW_show_log("Failed to open file: " + path + " - " + file.errorString());
+        return {};
+    }
     QTextStream stream(&file);
     return stream.readAll();
+}
+
+void CleanupTempFiles() {
+    QDir tempDir("temp");
+    if (tempDir.exists()) {
+        const auto files = tempDir.entryList(QDir::Files);
+        for (const auto &f : files) {
+            tempDir.remove(f);
+        }
+    }
 }
 
 int MkPort() {

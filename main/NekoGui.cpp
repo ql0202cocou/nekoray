@@ -204,8 +204,9 @@ namespace NekoGui_ConfigItem {
         if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
             file.write(save_content);
             file.close();
-            QFile::remove(fn);
-            QFile::rename(fn + ".tmp", fn);
+            if (!QFile::rename(fn + ".tmp", fn)) {
+                MW_show_log("Warning: Failed to save config: " + file.errorString());
+            }
         }
 
         return changed;

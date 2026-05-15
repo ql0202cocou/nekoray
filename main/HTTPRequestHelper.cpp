@@ -54,7 +54,7 @@ namespace NekoGui_network {
             MW_show_log(QStringLiteral("SSL Errors: %1 %2").arg(error_str.join(","), NekoGui::dataStore->sub_insecure ? "(Ignored)" : ""));
         });
         // Wait for response
-        auto abortTimer = new QTimer;
+        auto abortTimer = new QTimer(_reply);
         abortTimer->setSingleShot(true);
         abortTimer->setInterval(10000);
         QObject::connect(abortTimer, &QTimer::timeout, _reply, &QNetworkReply::abort);
@@ -64,10 +64,8 @@ namespace NekoGui_network {
             QObject::connect(_reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
             loop.exec();
         }
-        if (abortTimer != nullptr) {
-            abortTimer->stop();
-            abortTimer->deleteLater();
-        }
+        abortTimer->stop();
+        abortTimer->deleteLater();
         //
         auto result = NekoHTTPResponse{_reply->error() == QNetworkReply::NetworkError::NoError ? "" : _reply->errorString(),
                                        _reply->readAll(), _reply->rawHeaderPairs()};

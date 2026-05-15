@@ -17,7 +17,7 @@ namespace NekoGui_fmt {
         if (!url.isValid()) return false;
         auto query = GetQuery(url);
 
-        if (link.startsWith("socks4")) socks_http_type = type_Socks4;
+        if (link.startsWith("socks4a://") || link.startsWith("socks4://")) socks_http_type = type_Socks4;
         if (link.startsWith("http")) socks_http_type = type_HTTP;
         name = url.fragment(QUrl::FullyDecoded);
         serverAddress = url.host();
@@ -62,9 +62,15 @@ namespace NekoGui_fmt {
         stream->network = type;
 
         if (proxy_type == proxy_Trojan) {
-            stream->security = GetQueryValue(query, "security", "tls").replace("reality", "tls").replace("none", "");
+            auto security = GetQueryValue(query, "security", "tls");
+            if (security == "reality") security = "tls";
+            if (security == "none") security = "";
+            stream->security = security;
         } else {
-            stream->security = GetQueryValue(query, "security", "").replace("reality", "tls").replace("none", "");
+            auto security = GetQueryValue(query, "security", "");
+            if (security == "reality") security = "tls";
+            if (security == "none") security = "";
+            stream->security = security;
         }
         auto sni1 = GetQueryValue(query, "sni");
         auto sni2 = GetQueryValue(query, "peer");
@@ -131,7 +137,10 @@ namespace NekoGui_fmt {
             }
 
             auto query = GetQuery(url);
-            plugin = query.queryItemValue("plugin").replace("simple-obfs;", "obfs-local;");
+            plugin = query.queryItemValue("plugin");
+            if (plugin.startsWith("simple-obfs;")) {
+                plugin = QString("obfs-local;") + plugin.mid(strlen("simple-obfs;"));
+            }
         } else {
             // v2rayN
             DECODE_V2RAY_N_1
@@ -155,6 +164,7 @@ namespace NekoGui_fmt {
             uuid = objN["id"].toString();
             serverAddress = objN["add"].toString();
             serverPort = objN["port"].toVariant().toInt();
+            if (uuid.isEmpty() || serverAddress.isEmpty() || serverPort == 0) return false;
             // OPTIONAL
             name = objN["ps"].toString();
             aid = objN["aid"].toVariant().toInt();
@@ -232,7 +242,6 @@ namespace NekoGui_fmt {
             return !(uuid.isEmpty() || serverAddress.isEmpty());
         }
 
-        return false;
     }
 
     bool NaiveBean::TryParseLink(const QString &link) {
@@ -254,7 +263,7 @@ namespace NekoGui_fmt {
     bool QUICBean::TryParseLink(const QString &link) {
         auto url = QUrl(link);
         auto query = QUrlQuery(url.query());
-        if (url.host().isEmpty() || url.port() == -1) return false;
+        if (url.host().isEmpty()) return false;
 
         if (url.scheme() == "tuic") {
             // by daeuniverse
@@ -276,7 +285,7 @@ namespace NekoGui_fmt {
         } else if (QStringList{"hy2", "hysteria2"}.contains(url.scheme())) {
             name = url.fragment(QUrl::FullyDecoded);
             serverAddress = url.host();
-            serverPort = url.port();
+            serverPort = url.port(443);
             hopPort = query.queryItemValue("mport");
             obfsPassword = query.queryItemValue("obfs-password");
             allowInsecure = QStringList{"1", "true"}.contains(query.queryItemValue("insecure"));
@@ -288,6 +297,8 @@ namespace NekoGui_fmt {
             }
 
             sni = query.queryItemValue("sni");
+        } else {
+            return false;
         }
 
         return true;

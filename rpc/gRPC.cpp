@@ -13,7 +13,7 @@
 #include <QTimer>
 #include <QtEndian>
 #include <QThread>
-#include <QMutex>
+#include <QSemaphore>
 #include <QAbstractNetworkCache>
 
 namespace QtGrpc {
@@ -74,10 +74,18 @@ namespace QtGrpc {
             request.setRawHeader(GrpcAcceptEncodingHeader, QByteArray{"identity,deflate,gzip"});
             request.setRawHeader(AcceptEncodingHeader, QByteArray{"identity,gzip"});
             request.setRawHeader(TEHeader, QByteArray{"trailers"});
-            request.setRawHeader("nekoray_auth", nekoray_auth);
+            QByteArray safeAuth = nekoray_auth;
+            safeAuth.replace('\r', "");
+            safeAuth.replace('\n', "");
+            request.setRawHeader("nekoray_auth", safeAuth);
 
             QByteArray msg(GrpcMessageSizeHeaderSize, '\0');
-            *reinterpret_cast<int *>(msg.data() + 1) = qToBigEndian((int) args.size());
+            union {
+                char bytes[4];
+                int32_t value;
+            } length;
+            length.value = qToBigEndian(static_cast<int32_t>(args.size()));
+            memcpy(msg.data() + 1, length.bytes, 4);
             msg += args;
             // qDebug() << "SEND: " << msg.size();
 
@@ -93,7 +101,12 @@ namespace QtGrpc {
             }
 
             // Check if server answer with error
-            auto errCode = networkReply->rawHeader(GrpcStatusHeader).toInt();
+            auto errCodeBytes = networkReply->rawHeader(GrpcStatusHeader);
+            if (errCodeBytes.isEmpty()) {
+                statusCode = QNetworkReply::NetworkError::ProtocolUnknownError;
+                return {};
+            }
+            auto errCode = errCodeBytes.toInt();
             if (errCode != 0) {
                 QStringList errstr;
                 errstr << "grpc-status error code:" << Int2String(errCode) << ", error msg:"
@@ -109,14 +122,12 @@ namespace QtGrpc {
         QNetworkReply::NetworkError call(const QString &method, const QString &service, const QByteArray &args, QByteArray &qByteArray, int timeout_ms) {
             QNetworkReply *networkReply = post(method, service, args);
 
-            QTimer *abortTimer = nullptr;
-            if (timeout_ms > 0) {
-                abortTimer = new QTimer;
-                abortTimer->setSingleShot(true);
-                abortTimer->setInterval(timeout_ms);
-                QObject::connect(abortTimer, &QTimer::timeout, networkReply, &QNetworkReply::abort);
-                abortTimer->start();
-            }
+            int actualTimeout = timeout_ms > 0 ? timeout_ms : 30000;
+            auto abortTimer = new QTimer;
+            abortTimer->setSingleShot(true);
+            abortTimer->setInterval(actualTimeout);
+            QObject::connect(abortTimer, &QTimer::timeout, networkReply, &QNetworkReply::abort);
+            abortTimer->start();
 
             {
                 QEventLoop loop;
@@ -124,10 +135,8 @@ namespace QtGrpc {
                 loop.exec();
             }
 
-            if (abortTimer != nullptr) {
-                abortTimer->stop();
-                abortTimer->deleteLater();
-            }
+            abortTimer->stop();
+            abortTimer->deleteLater();
 
             auto grpcStatus = QNetworkReply::NetworkError::ProtocolUnknownError;
             qByteArray = processReply(networkReply, grpcStatus);
@@ -164,23 +173,23 @@ namespace QtGrpc {
             if (!NekoGui::dataStore->core_running) return QNetworkReply::NetworkError(-1919);
 
             std::string reqStr;
-            req.SerializeToString(&reqStr);
+            if (!req.SerializeToString(&reqStr)) {
+                return QNetworkReply::NetworkError::ProtocolFailure;
+            }
             auto requestArray = QByteArray::fromStdString(reqStr);
 
             QByteArray responseArray;
             QNetworkReply::NetworkError err;
-            QMutex lock;
-            lock.lock();
+            QSemaphore sem(0);
 
             runOnUiThread(
                 [&] {
                     err = call(methodName, serviceName, requestArray, responseArray, timeout_ms);
-                    lock.unlock();
+                    sem.release();
                 },
                 nm);
 
-            lock.lock();
-            lock.unlock();
+            sem.acquire();
             // qDebug() << "rsp err" << err;
             // qDebug() << "rsp array" << responseArray;
 
@@ -188,7 +197,7 @@ namespace QtGrpc {
                 return err;
             }
             if (!rsp->ParseFromArray(responseArray.data(), responseArray.size())) {
-                return QNetworkReply::NetworkError(-114514);
+                return QNetworkReply::NetworkError::ProtocolFailure;
             }
             return QNetworkReply::NetworkError::NoError;
         }

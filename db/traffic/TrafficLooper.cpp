@@ -69,7 +69,7 @@ namespace NekoGui_traffic {
                 data->downlink_rate = diff->downlink_rate;
             }
         }
-        updated[bypass->tag] = update_stats(bypass);
+        updated[bypass->tag] = update_stats(bypass.get());
         //
         for (const auto &pair: updated) {
             delete pair.second;
@@ -91,6 +91,7 @@ namespace NekoGui_traffic {
                     looping = false;
                     runOnUiThread([=] {
                         auto m = GetMainWindow();
+                        if (m == nullptr) return;
                         m->refresh_status("STOP");
                     });
                 }
@@ -118,6 +119,7 @@ namespace NekoGui_traffic {
             // post to UI
             runOnUiThread([=] {
                 auto m = GetMainWindow();
+                if (m == nullptr) return;
                 if (proxy != nullptr) {
                     m->refresh_status(QObject::tr("Proxy: %1\nDirect: %2").arg(proxy->DisplaySpeed(), bypass->DisplaySpeed()));
                 }

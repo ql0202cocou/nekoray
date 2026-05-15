@@ -20,7 +20,9 @@
 
 void signal_handler(int signum) {
     if (qApp) {
-        GetMainWindow()->on_commitDataRequest();
+        if (auto *mw = GetMainWindow()) {
+            mw->on_commitDataRequest();
+        }
         qApp->exit();
     }
 }

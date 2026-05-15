@@ -9,12 +9,18 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/matsuridayo/libneko/neko_common"
 )
 
-var update_download_url string
+var (
+	update_download_url string
+	update_download_mu  sync.Mutex
+)
+
+var downloadMu sync.Mutex
 
 func (s *BaseServer) Update(ctx context.Context, in *gen.UpdateReq) (*gen.UpdateResp, error) {
 	ret := &gen.UpdateResp{}
@@ -76,7 +82,9 @@ func (s *BaseServer) Update(ctx context.Context, in *gen.UpdateReq) (*gen.Update
 						if release.Prerelease && !in.CheckPreRelease {
 							continue
 						}
-						update_download_url = asset.BrowserDownloadUrl
+						update_download_mu.Lock()
+				update_download_url = asset.BrowserDownloadUrl
+				update_download_mu.Unlock()
 						ret.AssetsName = asset.Name
 						ret.DownloadUrl = asset.BrowserDownloadUrl
 						ret.ReleaseUrl = release.HtmlUrl
@@ -88,12 +96,18 @@ func (s *BaseServer) Update(ctx context.Context, in *gen.UpdateReq) (*gen.Update
 			}
 		}
 	} else { // Download update
-		if update_download_url == "" {
+		downloadMu.Lock()
+		defer downloadMu.Unlock()
+
+		update_download_mu.Lock()
+		url := update_download_url
+		update_download_mu.Unlock()
+		if url == "" {
 			ret.Error = "?"
 			return ret, nil
 		}
 
-		req, err := http.NewRequestWithContext(ctx, "GET", update_download_url, nil)
+		req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 		if err != nil {
 			ret.Error = err.Error()
 			return ret, nil
@@ -118,7 +132,10 @@ func (s *BaseServer) Update(ctx context.Context, in *gen.UpdateReq) (*gen.Update
 			ret.Error = err.Error()
 			return ret, nil
 		}
-		f.Sync()
+		if err := f.Sync(); err != nil {
+			ret.Error = err.Error()
+			return ret, nil
+		}
 	}
 
 	return ret, nil

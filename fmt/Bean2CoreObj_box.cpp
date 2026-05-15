@@ -60,7 +60,7 @@ namespace NekoGui_fmt {
                 tls["reality"] = QJsonObject{
                     {"enabled", true},
                     {"public_key", reality_pbk},
-                    {"short_id", reality_sid.split(",")[0]},
+                    {"short_id", reality_sid.split(",").value(0, "")},
                 };
                 if (fp.isEmpty()) fp = "random";
             }
@@ -154,15 +154,14 @@ namespace NekoGui_fmt {
 
         QJsonObject settings;
         if (proxy_type == proxy_VLESS) {
-            if (flow.right(7) == "-udp443") {
-                // 检查末尾是否包含"-udp443"，如果是，则删去
-                flow.chop(7);
-            } else if (flow == "none") {
-                // 不使用 flow
-                flow = "";
+            QString actualFlow = flow;
+            if (actualFlow.right(7) == "-udp443") {
+                actualFlow.chop(7);
+            } else if (actualFlow == "none") {
+                actualFlow = "";
             }
             outbound["uuid"] = password.trimmed();
-            outbound["flow"] = flow;
+            outbound["flow"] = actualFlow;
         } else {
             outbound["password"] = password;
         }
@@ -182,8 +181,11 @@ namespace NekoGui_fmt {
             {"certificate", caText.trimmed()},
             {"server_name", sni},
         };
-        if (!alpn.trimmed().isEmpty()) coreTlsObj["alpn"] = QList2QJsonArray(alpn.split(","));
-        if (proxy_type == proxy_Hysteria2) coreTlsObj["alpn"] = "h3";
+        if (proxy_type == proxy_Hysteria2) {
+            coreTlsObj["alpn"] = QJsonArray{"h3"};
+        } else if (!alpn.trimmed().isEmpty()) {
+            coreTlsObj["alpn"] = QList2QJsonArray(alpn.split(","));
+        }
 
         QJsonObject outbound{
             {"server", serverAddress},

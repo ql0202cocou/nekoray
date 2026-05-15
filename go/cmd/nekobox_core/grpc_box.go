@@ -67,7 +67,9 @@ func (s *server) Start(ctx context.Context, in *gen.LoadConfigReq) (out *gen.Err
 				Enabled:   true,
 				Outbounds: in.StatsOutbounds,
 			})
-			instance.Router().AppendTracker(statsService)
+			if router := instance.Router(); router != nil {
+				router.AppendTracker(statsService)
+			}
 		}
 	}
 	mu.Unlock()
@@ -142,7 +144,9 @@ func (s *server) Test(ctx context.Context, in *gen.TestReq) (out *gen.TestResp, 
 	} else if in.Mode == gen.TestMode_TcpPing {
 		out.Ms, err = speedtest.TcpPing(in.Address, in.Timeout)
 	} else if in.Mode == gen.TestMode_FullTest {
-		i, cancel, err := createBox([]byte(in.Config.CoreConfig))
+		var i *box.Box
+		var cancel context.CancelFunc
+		i, cancel, err = createBox([]byte(in.Config.CoreConfig))
 		if i != nil {
 			defer i.Close()
 			defer cancel()
