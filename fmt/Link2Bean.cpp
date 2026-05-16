@@ -77,7 +77,6 @@ namespace NekoGui_fmt {
         if (!sni1.isEmpty()) stream->sni = sni1;
         if (!sni2.isEmpty()) stream->sni = sni2;
         stream->alpn = GetQueryValue(query, "alpn");
-        { auto v = query.queryItemValue("allowInsecure"); if (v == "1" || v == "true") stream->allow_insecure = true; }
         stream->reality_pbk = GetQueryValue(query, "pbk", "");
         stream->reality_sid = GetQueryValue(query, "sid", "");
         stream->reality_spx = GetQueryValue(query, "spx", "");
@@ -211,7 +210,6 @@ namespace NekoGui_fmt {
             auto sni2 = GetQueryValue(query, "peer");
             if (!sni1.isEmpty()) stream->sni = sni1;
             if (!sni2.isEmpty()) stream->sni = sni2;
-            { auto v = query.queryItemValue("allowInsecure"); if (v == "1" || v == "true") stream->allow_insecure = true; }
             stream->reality_pbk = GetQueryValue(query, "pbk", "");
             stream->reality_sid = GetQueryValue(query, "sid", "");
             stream->reality_spx = GetQueryValue(query, "spx", "");
@@ -280,7 +278,7 @@ namespace NekoGui_fmt {
             alpn = query.queryItemValue("alpn");
             sni = query.queryItemValue("sni");
             udpRelayMode = query.queryItemValue("udp_relay_mode");
-            allowInsecure = query.queryItemValue("allow_insecure") == "1";
+            // allowInsecure = query.queryItemValue("allow_insecure") == "1";  // ignored from import for security
             disableSni = query.queryItemValue("disable_sni") == "1";
         } else if (QStringList{"hy2", "hysteria2"}.contains(url.scheme())) {
             name = url.fragment(QUrl::FullyDecoded);
@@ -288,7 +286,7 @@ namespace NekoGui_fmt {
             serverPort = url.port(443);
             hopPort = query.queryItemValue("mport");
             obfsPassword = query.queryItemValue("obfs-password");
-            allowInsecure = QStringList{"1", "true"}.contains(query.queryItemValue("insecure"));
+            // allowInsecure = QStringList{"1", "true"}.contains(query.queryItemValue("insecure"));  // ignored from import for security
 
             if (url.password().isEmpty()) {
                 password = url.userName();

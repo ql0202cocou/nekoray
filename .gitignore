@@ -87,3 +87,6 @@ CMakeLists.txt.user*
 
 .vs
 out
+
+plan.md
+fix_plan.md

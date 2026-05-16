@@ -87,6 +87,18 @@ QString GetRandomString(int randomStringLength) {
     return randomString;
 }
 
+QString GetSecureRandomString(int length) {
+    std::random_device rd;
+    const QString chars("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
+    std::uniform_int_distribution<int> dist(0, chars.length() - 1);
+    QString result;
+    result.reserve(length);
+    for (int i = 0; i < length; ++i) {
+        result.append(chars.at(dist(rd)));
+    }
+    return result;
+}
+
 quint64 GetRandomUint64() {
     std::random_device rd;
     std::mt19937 mt(rd());

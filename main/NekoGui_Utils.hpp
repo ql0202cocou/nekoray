@@ -72,6 +72,8 @@ QString GetQueryValue(const QUrlQuery &q, const QString &key, const QString &def
 
 QString GetRandomString(int randomStringLength);
 
+QString GetSecureRandomString(int length);
+
 quint64 GetRandomUint64();
 
 // JSON

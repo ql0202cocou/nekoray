@@ -268,6 +268,20 @@ void DialogBasicSettings::accept() {
     NekoGui::dataStore->user_agent = ui->user_agent->text();
     D_SAVE_BOOL(sub_use_proxy)
     D_SAVE_BOOL(sub_clear)
+
+    if (ui->sub_insecure->isChecked() && !NekoGui::dataStore->sub_insecure) {
+        auto ret = QMessageBox::warning(this,
+            tr("Security Warning"),
+            tr("Disabling TLS certificate verification for subscriptions exposes update requests to man-in-the-middle attacks.\n"
+               "Malicious networks can replace your proxy servers with compromised nodes.\n\n"
+               "Are you sure you want to disable certificate verification?"),
+            QMessageBox::Yes | QMessageBox::No,
+            QMessageBox::No);
+        if (ret != QMessageBox::Yes) {
+            ui->sub_insecure->setChecked(false);
+            return;
+        }
+    }
     D_SAVE_BOOL(sub_insecure)
     D_SAVE_INT_ENABLE(sub_auto_update, sub_auto_update_enable)
 

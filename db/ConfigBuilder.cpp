@@ -6,7 +6,8 @@
 #include <QApplication>
 #include <QFile>
 #include <QFileInfo>
-#include <QUuid>
+
+#include "main/NekoGui_Utils.hpp"
 
 #define BOX_UNDERLYING_DNS dataStore->core_box_underlying_dns.isEmpty() ? "local" : dataStore->core_box_underlying_dns
 
@@ -757,10 +758,11 @@ namespace NekoGui {
         }
 
         if (!status->forTest && dataStore->core_box_clash_api > 0) {
-            // H1 fix: Generate random secret if none configured
             auto secret = dataStore->core_box_clash_api_secret;
             if (secret.isEmpty()) {
-                secret = QUuid::createUuid().toString(QUuid::WithoutBraces).left(16);
+                secret = GetSecureRandomString(32);
+                dataStore->core_box_clash_api_secret = secret;
+                dataStore->Save();
             }
             QJsonObject clash_api = {
                 {"external_controller", "127.0.0.1:" + Int2String(dataStore->core_box_clash_api)},
