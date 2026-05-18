@@ -32,6 +32,8 @@ endif ()
 #### Platform Variables ####
 if (WIN32)
     include("cmake/windows/windows.cmake")
+elseif (APPLE)
+    include("cmake/macos/macos.cmake")
 else ()
     include("cmake/linux/linux.cmake")
 endif ()
