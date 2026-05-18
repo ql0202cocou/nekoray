@@ -40,6 +40,7 @@ namespace NekoGui_network {
 #endif
         request.setHeader(QNetworkRequest::KnownHeaders::UserAgentHeader, NekoGui::dataStore->GetUserAgent());
         if (NekoGui::dataStore->sub_insecure) {
+            MW_show_log(QObject::tr("[Security Warning] Subscription TLS certificate verification is disabled for this request."));
             QSslConfiguration c;
             c.setPeerVerifyMode(QSslSocket::PeerVerifyMode::VerifyNone);
             request.setSslConfiguration(c);

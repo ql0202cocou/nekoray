@@ -1,0 +1,43 @@
+name: Security scan
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * 1"
+
+jobs:
+  go-security:
+    name: Go tests and govulncheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checking out sources
+        uses: actions/checkout@v4
+
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.x"
+          cache: true
+          cache-dependency-path: |
+            go/cmd/updater/go.mod
+            go/cmd/update_signer/go.mod
+            go/grpc_server/go.mod
+            go/cmd/nekobox_core/go.mod
+
+      - name: Cache sibling source repositories
+        uses: actions/cache@v4
+        with:
+          path: |
+            ../libneko
+            ../sing-box
+            ../sing-quic
+          key: sibling-sources-${{ hashFiles('libs/get_source_env.sh') }}
+
+      - name: Run full Go security scan
+        shell: bash
+        run: ./libs/security_scan_go.sh

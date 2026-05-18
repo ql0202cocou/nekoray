@@ -23,5 +23,11 @@ popd
 
 #### Go: nekobox_core ####
 pushd go/cmd/nekobox_core
-go build -v -o $DEST -trimpath -ldflags "-w -s -X github.com/matsuridayo/libneko/neko_common.Version_neko=$version_standalone" -tags "with_clash_api,with_gvisor,with_quic,with_utls,with_v2ray_api,with_tailscale,with_wireguard,with_naive_outbound"
+core_ldflags="-w -s -X github.com/matsuridayo/libneko/neko_common.Version_neko=$version_standalone"
+if [ -n "${NKR_UPDATE_PUBLIC_KEY_BASE64:-}" ]; then
+  core_ldflags="$core_ldflags -X grpc_server.updatePublicKeyBase64=$NKR_UPDATE_PUBLIC_KEY_BASE64"
+else
+  echo "Warning: NKR_UPDATE_PUBLIC_KEY_BASE64 is empty; built-in updater will reject downloaded update packages."
+fi
+go build -v -o $DEST -trimpath -ldflags "$core_ldflags" -tags "with_clash_api,with_gvisor,with_quic,with_utls,with_v2ray_api,with_tailscale,with_wireguard,with_naive_outbound"
 popd
