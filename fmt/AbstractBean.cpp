@@ -52,18 +52,17 @@ namespace NekoGui_fmt {
             return;
         }
 
-        QPointer<AbstractBean> guard(this);
-        QHostInfo::lookupHost(serverAddress, QApplication::instance(), [guard](const QHostInfo &host) {
+        std::weak_ptr<AbstractBean> weak = shared_from_this();
+        QHostInfo::lookupHost(serverAddress, QApplication::instance(), [weak, onFinished](const QHostInfo &host) {
+            auto guard = weak.lock();
             if (!guard) return;
             auto addr = host.addresses();
             if (!addr.isEmpty()) {
                 auto domain = guard->serverAddress;
-                auto stream = GetStreamSettings(guard);
+                auto stream = GetStreamSettings(guard.get());
 
-                // replace serverAddress
                 guard->serverAddress = addr.first().toString();
 
-                // replace ws tls
                 if (stream != nullptr) {
                     if (stream->security == "tls" && stream->sni.isEmpty()) {
                         stream->sni = domain;
@@ -73,7 +72,7 @@ namespace NekoGui_fmt {
                     }
                 }
             }
-            guard->onFinished();
+            onFinished();
         });
     }
 } // namespace NekoGui_fmt

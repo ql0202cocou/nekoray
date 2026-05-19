@@ -219,6 +219,25 @@
         <source>Mixed (SOCKS+HTTP) Listen Port</source>
         <translation>Mixed (SOCKS+HTTP) 监听端口</translation>
     </message>
+    <message>
+        <source>Custom Endpoint</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>⚠️ Danger: Disabling TLS certificate verification exposes subscription update requests to man-in-the-middle attacks. Malicious networks can replace your proxy configuration.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Security Warning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabling TLS certificate verification for subscriptions exposes update requests to man-in-the-middle attacks.
+Malicious networks can replace your proxy servers with compromised nodes.
+
+Are you sure you want to disable certificate verification?</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DialogEditGroup</name>
@@ -743,6 +762,13 @@ This needs to be run NekoBox with administrator privileges.</source>
     </message>
 </context>
 <context>
+    <name>EditAnyTLS</name>
+    <message>
+        <source>Password</source>
+        <translation type="unfinished">密码</translation>
+    </message>
+</context>
+<context>
     <name>EditChain</name>
     <message>
         <source>Select Profile</source>
@@ -919,6 +945,53 @@ This needs to be run NekoBox with administrator privileges.</source>
     </message>
 </context>
 <context>
+    <name>EditSSH</name>
+    <message>
+        <source>User</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password</source>
+        <translation type="unfinished">密码</translation>
+    </message>
+    <message>
+        <source>Private Key Path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Private Key Passphrase</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Client Version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Private Key</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>One key per line (PEM format)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Key</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>One key per line</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host Key Algorithms</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>One algorithm per line</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>EditShadowSocks</name>
     <message>
         <source>Plugin Args</source>
@@ -958,6 +1031,88 @@ This needs to be run NekoBox with administrator privileges.</source>
     <message>
         <source>Password</source>
         <translation>密码</translation>
+    </message>
+</context>
+<context>
+    <name>EditTailscale</name>
+    <message>
+        <source>State Directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Auth Key</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Control URL</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hostname</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exit Node</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ephemeral</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Accept Routes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exit Node Allow LAN Access</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Advertise Exit Node</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Advertise Routes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>One route per line (e.g., 192.168.1.0/24)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Advertise Tags</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>One tag per line</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>EditTor</name>
+    <message>
+        <source>Executable Path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Data Directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Extra Args</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>One arg per line</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Torrc Config</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <translation type="unfinished">未设置</translation>
     </message>
 </context>
 <context>
@@ -1085,10 +1240,6 @@ This needs to be run NekoBox with administrator privileges.</source>
     <message>
         <source>Server</source>
         <translation>服务器</translation>
-    </message>
-    <message>
-        <source>Ads</source>
-        <translation>推广</translation>
     </message>
     <message>
         <source>Type</source>
@@ -1652,6 +1803,14 @@ Release note:
     <message>
         <source>The last speed test did not exit completely, please wait. If it persists, please restart the program.</source>
         <translation>上次速度测试未完全退出，请等待。如果问题仍然存在，请重新启动程序。</translation>
+    </message>
+    <message>
+        <source>Speedtest finished.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>[Security Warning] Subscription TLS certificate verification is disabled for this request.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

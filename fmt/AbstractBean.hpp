@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <QJsonObject>
 #include <QJsonArray>
 
@@ -24,7 +25,7 @@ namespace NekoGui_fmt {
         QString config_export;
     };
 
-    class AbstractBean : public JsonStore {
+    class AbstractBean : public JsonStore, public std::enable_shared_from_this<AbstractBean> {
     public:
         int version;
 

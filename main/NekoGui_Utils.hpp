@@ -1,4 +1,4 @@
-// DO NOT INCLUDE THIS
+#pragma once
 
 #include <functional>
 #include <memory>

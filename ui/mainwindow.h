@@ -190,7 +190,7 @@ private:
 
     void speedtest_current();
 
-    static void stop_core_daemon();
+    void stop_core_daemon();
 
     void CheckUpdate();
 

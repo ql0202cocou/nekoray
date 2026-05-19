@@ -5,6 +5,7 @@
 
 #include "GroupUpdater.hpp"
 
+#include <QCoreApplication>
 #include <QInputDialog>
 #include <QUrlQuery>
 
