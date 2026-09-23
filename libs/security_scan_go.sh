@@ -2,7 +2,11 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-GOVULNCHECK="${GOVULNCHECK:-go run golang.org/x/vuln/cmd/govulncheck@latest}"
+# The scanner is pinned so that a new govulncheck release cannot turn CI red on its own.
+# The vulnerability database it consults is still live, so a newly published advisory
+# against an existing dependency will (correctly) fail the scan. Bump this deliberately.
+GOVULNCHECK_VERSION="${GOVULNCHECK_VERSION:-v1.8.0}"
+GOVULNCHECK="${GOVULNCHECK:-go run golang.org/x/vuln/cmd/govulncheck@$GOVULNCHECK_VERSION}"
 
 prepare_sources() {
   if [ "${NKR_SKIP_GET_SOURCE:-0}" = "1" ]; then
