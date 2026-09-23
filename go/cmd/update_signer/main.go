@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/base64"
@@ -21,6 +22,7 @@ func main() {
 func run() error {
 	genKey := flag.Bool("gen-key", false, "generate an Ed25519 key pair")
 	verify := flag.Bool("verify", false, "verify signature instead of signing")
+	checkKeys := flag.Bool("check-keys", false, "check that the private key is the counterpart of the public key")
 	privateKeyB64 := flag.String("private-key", os.Getenv("NKR_UPDATE_PRIVATE_KEY_BASE64"), "base64 Ed25519 private key")
 	publicKeyB64 := flag.String("public-key", os.Getenv("NKR_UPDATE_PUBLIC_KEY_BASE64"), "base64 Ed25519 public key")
 	signaturePath := flag.String("sig", "", "signature path for verify mode")
@@ -30,9 +32,13 @@ func run() error {
 		return generateKeyPair()
 	}
 
+	if *checkKeys {
+		return checkKeyPair(*privateKeyB64, *publicKeyB64)
+	}
+
 	args := flag.Args()
 	if len(args) == 0 {
-		return errors.New("usage: update_signer [-gen-key] [-verify -public-key <base64> -sig <file.sig>] <asset>...")
+		return errors.New("usage: update_signer [-gen-key] [-check-keys] [-verify -public-key <base64> -sig <file.sig>] <asset>...")
 	}
 
 	if *verify {
@@ -60,6 +66,30 @@ func generateKeyPair() error {
 	}
 	fmt.Println("NKR_UPDATE_PUBLIC_KEY_BASE64=" + base64.StdEncoding.EncodeToString(publicKey))
 	fmt.Println("NKR_UPDATE_PRIVATE_KEY_BASE64=" + base64.StdEncoding.EncodeToString(privateKey))
+	return nil
+}
+
+// checkKeyPair verifies that the configured private key is the counterpart of the
+// configured public key. Release builds embed the public key while CI signs with the
+// private key; if the two secrets ever diverge, every published update is rejected by
+// clients and the breakage is only visible on end-user machines.
+func checkKeyPair(privateKeyB64, publicKeyB64 string) error {
+	privateKey, err := decodePrivateKey(privateKeyB64)
+	if err != nil {
+		return err
+	}
+	publicKey, err := decodePublicKey(publicKeyB64)
+	if err != nil {
+		return err
+	}
+	derived, ok := privateKey.Public().(ed25519.PublicKey)
+	if !ok {
+		return errors.New("unexpected public key type derived from private key")
+	}
+	if !bytes.Equal(derived, publicKey) {
+		return errors.New("private key does not match public key: published updates would be rejected by clients")
+	}
+	fmt.Println("update signing key pair matches")
 	return nil
 }
 

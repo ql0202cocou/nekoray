@@ -58,7 +58,10 @@ func (s *BaseServer) Update(ctx context.Context, in *gen.UpdateReq) (*gen.Update
 		ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 		defer cancel()
 
-		req, err := http.NewRequestWithContext(ctx, "GET", "https://api.github.com/repos/MatsuriDayo/nekoray/releases", nil)
+		// This fork publishes its own signed releases; the updater must query the same
+		// repository that the release workflow publishes to, otherwise the signature
+		// assets are never found.
+		req, err := http.NewRequestWithContext(ctx, "GET", "https://api.github.com/repos/ql0202cocou/nekoray/releases", nil)
 		if err != nil {
 			ret.Error = err.Error()
 			return ret, nil

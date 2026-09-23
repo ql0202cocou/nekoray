@@ -46,3 +46,23 @@ func TestDecodeKeyValidation(t *testing.T) {
 		t.Fatal("expected short private key to fail")
 	}
 }
+
+func TestCheckKeyPair(t *testing.T) {
+	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	privateKeyB64 := base64.StdEncoding.EncodeToString(privateKey)
+
+	if err := checkKeyPair(privateKeyB64, base64.StdEncoding.EncodeToString(publicKey)); err != nil {
+		t.Fatalf("expected matching key pair to pass, got %v", err)
+	}
+
+	otherPublicKey, _, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := checkKeyPair(privateKeyB64, base64.StdEncoding.EncodeToString(otherPublicKey)); err == nil {
+		t.Fatal("expected mismatched key pair to fail")
+	}
+}
