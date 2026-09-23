@@ -12,7 +12,19 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
+      - name: Check AUR deploy key
+        id: check
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        run: |
+          if [ -z "$DEPLOY_KEY" ]; then
+            echo "has_key=false" >> "$GITHUB_OUTPUT"
+            echo "DEPLOY_KEY secret is not configured; skipping AUR package update."
+          else
+            echo "has_key=true" >> "$GITHUB_OUTPUT"
+          fi
       - uses: chitang233/aur-pkgbuild-builder@d44ae80e4bd09d6ba29fb5f36937529473212886 # main
+        if: steps.check.outputs.has_key == 'true'
         with:
           deploy_key: ${{ secrets.DEPLOY_KEY }}
           package_name: 'nekoray-git'
