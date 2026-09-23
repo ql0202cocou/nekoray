@@ -12,7 +12,7 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - uses: chitang233/aur-pkgbuild-builder@main
+      - uses: chitang233/aur-pkgbuild-builder@d44ae80e4bd09d6ba29fb5f36937529473212886 # main
         with:
           deploy_key: ${{ secrets.DEPLOY_KEY }}
           package_name: 'nekoray-git'
