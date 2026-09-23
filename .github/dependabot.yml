@@ -1,0 +1,28 @@
+version: 2
+
+updates:
+  # Keep the actions referenced by .github/workflows/* current, including the third-party
+  # ones pinned to a full-length commit SHA. Dependabot rewrites both the SHA and the
+  # trailing "# vX.Y.Z" comment, so the version marker must stay a plain version string.
+  #
+  # Note: Dependabot security alerts deliberately skip actions pinned to a SHA, so these
+  # weekly version-update pull requests are the only automatic signal that a pinned action
+  # moved. Review them like any other dependency change.
+  #
+  # Go modules are intentionally NOT listed here: all four modules resolve sibling sources
+  # through relative `replace` directives that live outside the repository
+  # (../../../libneko, ../../../../sing-box, ../../../../sing-quic), and Dependabot only
+  # checks out this repository, so a gomod entry would fail on every run. Go dependencies
+  # are updated manually instead.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
