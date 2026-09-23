@@ -9,11 +9,19 @@ pushd ..
 ####
 
 if [ ! -d "sing-box" ]; then
-  git clone --no-checkout https://github.com/MatsuriDayo/sing-box.git
+  git clone --no-checkout https://github.com/SagerNet/sing-box.git
+else
+  git -C sing-box remote set-url origin https://github.com/SagerNet/sing-box.git
 fi
 pushd sing-box
 git fetch origin "$COMMIT_SING_BOX"
-git checkout "$COMMIT_SING_BOX"
+git checkout -f "$COMMIT_SING_BOX"
+git clean -fd
+# neko patches on top of upstream (see libs/patches/sing-box/)
+for patch in ../nekoray/libs/patches/sing-box/*.patch; do
+  [ -f "$patch" ] || continue
+  git apply "$patch"
+done
 
 popd
 
