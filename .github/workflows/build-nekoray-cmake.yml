@@ -40,7 +40,7 @@ jobs:
           key: CommonCache-${{ matrix.cross_os }}-${{ matrix.cross_arch }}-${{ hashFiles('libs/*.sh', 'go_status', '*.txt') }}
       - name: Install Golang
         if: steps.cache-common.outputs.cache-hit != 'true'
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           go-version: 1.26.x
       - name: Build golang parts
