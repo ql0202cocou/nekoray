@@ -4,6 +4,9 @@ go 1.26.0
 
 require (
 	github.com/matsuridayo/libneko v1.0.0 // replaced
+	// Pinned to the master commit that fixes GO-2026-6443. Do NOT "upgrade" this to
+	// v1.84.x: the advisory's affected range starts at 1.84.0-dev and only this commit
+	// fixes it. Move to the v1.85.0 tag once it is released.
 	google.golang.org/grpc v1.85.0-dev.0.20260825072537-93e31b48545e
 	google.golang.org/protobuf v1.36.12
 )

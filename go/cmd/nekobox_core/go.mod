@@ -190,6 +190,9 @@ require (
 	golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2 // indirect
 	golang.zx2c4.com/wireguard/windows v1.0.1 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260817212433-ac3dfec99bb1 // indirect
+	// Pinned to the master commit that fixes GO-2026-6443. Do NOT "upgrade" this to
+	// v1.84.x: the advisory's affected range starts at 1.84.0-dev and only this commit
+	// fixes it. Move to the v1.85.0 tag once it is released.
 	google.golang.org/grpc v1.85.0-dev.0.20260825072537-93e31b48545e // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
