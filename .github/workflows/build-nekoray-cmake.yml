@@ -4,14 +4,19 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release Tag"
-        required: true
-      publish:
-        description: "Publish: If want ignore"
+        description: "Release tag; must already exist in the repository (required for pack-only / publish)"
         required: false
-      artifact-pack:
-        description: "artifact-pack: If want ignore"
-        required: false
+      mode:
+        description: "build-only = build only | pack-only = build, pack and sign, no Release | publish = build, pack, sign and create the Release"
+        type: choice
+        options:
+          - build-only
+          - pack-only
+          - publish
+        default: build-only
+permissions:
+  contents: read
+
 jobs:
   build-go:
     strategy:
@@ -23,6 +28,7 @@ jobs:
             cross_arch: public_res
       fail-fast: false
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     steps:
       - name: Checking out sources
         uses: actions/checkout@v7
@@ -72,14 +78,13 @@ jobs:
           - platform: windows-2022
             arch: x64
             qt_version: "6.7"
-          - platform: ubuntu-20.04
+          - platform: ubuntu-latest
             arch: x64
             qt_version: "5.12"
       fail-fast: false
 
     runs-on: ${{ matrix.platform }}
-    env:
-      ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+    timeout-minutes: 300
     steps:
       - name: Checking out sources
         uses: actions/checkout@v7
@@ -87,7 +92,7 @@ jobs:
           submodules: "recursive"
       - name: Install MSVC compiler
         if: matrix.platform == 'windows-2022'
-        uses: ilammy/msvc-dev-cmd@v1
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
         with:
           # 14.1 is for vs2017, 14.2 is vs2019, following the upstream vcpkg build from Qv2ray-deps repo
           toolset: 14.2
@@ -101,7 +106,7 @@ jobs:
         run: bash ./libs/download_qtsdk_win.sh
       # ========================================================================================================= 编译与 Qt 无关的依赖
       - name: Install ninja-build tool
-        uses: seanmiddleditch/gha-setup-ninja@v3
+        uses: seanmiddleditch/gha-setup-ninja@16b940825621068d98711680b6c3ff92201f8fc0 # v3
       - name: Cache Download
         id: cache-deps
         uses: actions/cache@v6
@@ -110,11 +115,11 @@ jobs:
           key: DepsCache-${{ matrix.platform }}-${{ matrix.arch }}-${{ hashFiles('libs/build_deps_*.sh') }}-Qt${{ matrix.qt_version }}
       - name: Build Dependencies
         shell: bash
-        if: steps.cache-deps.outputs.cache-hit != 'true' && matrix.platform != 'ubuntu-20.04'
+        if: steps.cache-deps.outputs.cache-hit != 'true' && matrix.platform != 'ubuntu-latest'
         run: ./libs/build_deps_all.sh
       - name: Build Dependencies (Docker)
         shell: bash
-        if: steps.cache-deps.outputs.cache-hit != 'true' && matrix.platform == 'ubuntu-20.04'
+        if: steps.cache-deps.outputs.cache-hit != 'true' && matrix.platform == 'ubuntu-latest'
         run: |
           docker run --rm \
             -v $PWD:/nekoray \
@@ -139,7 +144,7 @@ jobs:
           ./libs/deploy_windows64.sh
       - name: Linux - Generate MakeFile and Build
         shell: bash
-        if: matrix.platform == 'ubuntu-20.04'
+        if: matrix.platform == 'ubuntu-latest'
         run: |
           docker run --rm \
             -v $PWD:/nekoray \
@@ -157,23 +162,30 @@ jobs:
           path: artifacts.tgz
   publish:
     name: Pack & Publish Release
-    if: github.event.inputs.artifact-pack != 'y'
+    # Fail safe: any empty or unknown mode leaves this job (and the Release) untouched.
+    if: github.event.inputs.mode == 'pack-only' || github.event.inputs.mode == 'publish'
     runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: write     # gh release 需要该权限来创建 / 删除 Release
     needs:
       - build-cpp
       - build-go
     steps:
       - name: Checking out sources
         uses: actions/checkout@v7
+      - name: Validate inputs
+        run: |
+          if [ -z "${{ github.event.inputs.tag }}" ]; then
+            echo "The 'tag' input is required when mode is 'pack-only' or 'publish'."
+            exit 1
+          fi
       - name: Download Artifacts
         uses: actions/download-artifact@v8
         with:
           path: download-artifact
       - name: Pack
         run: |
-          curl -Lo - https://github.com/tcnksm/ghr/releases/download/v0.13.0/ghr_v0.13.0_linux_amd64.tar.gz | tar xzv
-          mv ghr*linux_amd64/ghr .
-          ####
           source libs/env_deploy.sh
           find . -name artifacts.tgz | xargs -n1 tar xvzf
           cd deployment
@@ -213,6 +225,18 @@ jobs:
           go-version: 1.26.x
           cache: true
           cache-dependency-path: go/cmd/update_signer/go.mod
+      - name: Verify update signing key pair
+        env:
+          NKR_UPDATE_PRIVATE_KEY_BASE64: ${{ secrets.NKR_UPDATE_PRIVATE_KEY_BASE64 }}
+          NKR_UPDATE_PUBLIC_KEY_BASE64: ${{ secrets.NKR_UPDATE_PUBLIC_KEY_BASE64 }}
+        run: |
+          if [ -z "${NKR_UPDATE_PRIVATE_KEY_BASE64:-}" ] || [ -z "${NKR_UPDATE_PUBLIC_KEY_BASE64:-}" ]; then
+            echo "Both NKR_UPDATE_PRIVATE_KEY_BASE64 and NKR_UPDATE_PUBLIC_KEY_BASE64 are required: the public key is compiled into the binaries and must match the key used for signing."
+            exit 1
+          fi
+          # Fail before signing if the key pair diverged; otherwise clients would reject
+          # every published update and the breakage would only show up on user machines.
+          go run ./go/cmd/update_signer/main.go -check-keys
       - name: Sign update packages
         env:
           NKR_UPDATE_PRIVATE_KEY_BASE64: ${{ secrets.NKR_UPDATE_PRIVATE_KEY_BASE64 }}
@@ -236,6 +260,35 @@ jobs:
           name: Deployment-${{ github.sha }}
           path: deployment
       - name: Release
-        if: github.event.inputs.publish != 'y'
+        if: github.event.inputs.mode == 'publish'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          ./ghr -delete -t "${{ github.token }}" -n "${{ github.event.inputs.tag }}" "${{ github.event.inputs.tag }}" deployment
+          set -euo pipefail
+          tag="${{ github.event.inputs.tag }}"
+          # This step used to download ghr v0.13.0 (2021) with `curl | tar` and execute it
+          # while holding a write token, with no integrity check. Use the runner's
+          # preinstalled gh CLI instead: no unverified third-party binary is executed.
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "deleting existing release for $tag (the git tag itself is kept)"
+            gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --yes
+          fi
+
+          mapfile -t assets < <(find deployment -maxdepth 1 -type f \
+            \( -name '*.zip' -o -name '*.zip.sig' -o -name '*.deb' -o -name '*.AppImage' \) | sort)
+          if [ "${#assets[@]}" -eq 0 ]; then
+            echo "no release assets found under deployment/"
+            exit 1
+          fi
+          printf 'uploading %d asset(s):\n' "${#assets[@]}"
+          printf '  %s\n' "${assets[@]}"
+
+          # --notes "" keeps the release body empty, matching the previous ghr behaviour.
+          # --verify-tag aborts instead of silently creating the tag from the default branch.
+          gh release create "$tag" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$tag" \
+            --notes "" \
+            --verify-tag \
+            "${assets[@]}"
