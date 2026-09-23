@@ -106,7 +106,7 @@ jobs:
         run: bash ./libs/download_qtsdk_win.sh
       # ========================================================================================================= 编译与 Qt 无关的依赖
       - name: Install ninja-build tool
-        uses: seanmiddleditch/gha-setup-ninja@16b940825621068d98711680b6c3ff92201f8fc0 # v3
+        uses: seanmiddleditch/gha-setup-ninja@3b1f8f94a2f8254bd26914c4ab9474d4f0015f67 # v6
       - name: Cache Download
         id: cache-deps
         uses: actions/cache@v6
